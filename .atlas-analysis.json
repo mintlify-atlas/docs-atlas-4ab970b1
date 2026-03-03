@@ -1,0 +1,148 @@
+{
+  "projectType": "cli-tool",
+  "projectName": "Repomix",
+  "projectDescription": "Pack your entire repository into a single, AI-friendly file for LLMs like Claude, ChatGPT, and more",
+  "theme": "palm",
+  "primaryColor": "#eb7c3c",
+  "lightColor": null,
+  "darkColor": null,
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/how-it-works",
+              "concepts/output-formats",
+              "concepts/file-selection",
+              "concepts/security"
+            ]
+          },
+          {
+            "group": "Usage Guides",
+            "pages": [
+              "guides/basic-usage",
+              "guides/remote-repositories",
+              "guides/compression",
+              "guides/token-optimization",
+              "guides/splitting-output",
+              "guides/docker"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "configuration/overview",
+              "configuration/config-file",
+              "configuration/file-patterns",
+              "configuration/output-options"
+            ]
+          },
+          {
+            "group": "Integrations",
+            "pages": [
+              "integrations/mcp-server",
+              "integrations/claude-code",
+              "integrations/browser-extension",
+              "integrations/vscode-extension",
+              "integrations/agent-skills"
+            ]
+          },
+          {
+            "group": "Advanced Features",
+            "pages": [
+              "advanced/programmatic-api",
+              "advanced/custom-instructions",
+              "advanced/git-integration"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "CLI Reference",
+        "groups": [
+          {
+            "group": "Commands",
+            "pages": [
+              "cli/overview",
+              "cli/pack",
+              "cli/init",
+              "cli/remote",
+              "cli/mcp"
+            ]
+          },
+          {
+            "group": "Options",
+            "pages": [
+              "cli/options/basic",
+              "cli/options/output",
+              "cli/options/file-selection",
+              "cli/options/security",
+              "cli/options/token-counting"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Resources",
+        "groups": [
+          {
+            "group": "Help",
+            "pages": [
+              "resources/faq",
+              "resources/troubleshooting",
+              "resources/prompt-examples",
+              "resources/changelog"
+            ]
+          },
+          {
+            "group": "Community",
+            "pages": [
+              "resources/contributing",
+              "resources/support"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "AI-optimized output formats (XML, Markdown, JSON, Plain Text)",
+    "Token counting for LLM context limits",
+    "Git-aware file filtering (.gitignore, .ignore)",
+    "Built-in security scanning with Secretlint",
+    "Code compression using Tree-sitter",
+    "Remote repository processing",
+    "Model Context Protocol (MCP) server",
+    "Browser extension for GitHub",
+    "Claude Code plugins",
+    "Agent Skills generation",
+    "File splitting for large codebases"
+  ],
+  "publicApiSurface": [
+    "repomix [directories...] - Main CLI command",
+    "repomix --init - Initialize configuration",
+    "repomix --remote <url> - Process remote repository",
+    "repomix --mcp - Run as MCP server",
+    "repomix --compress - Enable code compression",
+    "repomix --style <format> - Set output format",
+    "repomix --include <patterns> - Include files",
+    "repomix --ignore <patterns> - Exclude files",
+    "repomix --output <file> - Set output file",
+    "repomix --skill-generate - Generate Agent Skills",
+    "pack() - Programmatic API function",
+    "collectFiles() - File collection API",
+    "runSecurityCheck() - Security validation API",
+    "TokenCounter - Token counting class"
+  ]
+}
