@@ -1,97 +1,196 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "Repomix Documentation"
+description: "Pack your entire repository into a single, AI-friendly file"
+mode: "custom"
 ---
 
-## Setting up
+<div className="relative overflow-hidden bg-gradient-to-br from-[#eb7c3c] via-[#d46a2f] to-[#bd5922] py-20 text-white">
+  <div className="absolute inset-0 bg-black/10" />
+  <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
+    <div className="mx-auto max-w-3xl text-center">
+      <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
+        Pack Your Codebase for AI
+      </h1>
+      <p className="mt-6 text-lg leading-8 text-white/90 max-w-2xl mx-auto">
+        Repomix transforms your entire repository into a single, AI-friendly file. Perfect for feeding codebases to Claude, ChatGPT, DeepSeek, Gemini, and other Large Language Models.
+      </p>
+      <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+        <a
+          href="/quickstart"
+          className="rounded-lg bg-white px-6 py-3 text-base font-semibold text-[#eb7c3c] shadow-sm hover:bg-gray-100 transition-colors no-underline"
+        >
+          Get Started
+        </a>
+        <a
+          href="/installation"
+          className="rounded-lg border border-white/30 bg-white/10 px-6 py-3 text-base font-semibold text-white hover:bg-white/20 transition-colors no-underline"
+        >
+          Installation Guide
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
 
-Get your documentation site up and running in minutes.
+<div className="mx-auto max-w-7xl px-6 py-16 lg:px-8">
+  <div className="mx-auto max-w-2xl text-center mb-12">
+    <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Quick Start</h2>
+    <p className="mt-4 text-base text-gray-600 dark:text-gray-400">
+      Get up and running with Repomix in minutes
+    </p>
+  </div>
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+  <Steps>
+    <Step title="Install Repomix">
+      Run Repomix instantly with npx, or install it globally:
+      
+      <CodeGroup>
+      ```bash npx
+      npx repomix@latest
+      ```
+      
+      ```bash npm
+      npm install -g repomix
+      ```
+      
+      ```bash yarn
+      yarn global add repomix
+      ```
+      
+      ```bash bun
+      bun add -g repomix
+      ```
+      
+      ```bash Homebrew
+      brew install repomix
+      ```
+      </CodeGroup>
+    </Step>
 
-## Make it yours
+    <Step title="Run in your project">
+      Navigate to your project directory and run Repomix:
+      
+      ```bash
+      repomix
+      ```
+      
+      This generates a `repomix-output.xml` file containing your entire repository in an AI-friendly format.
+    </Step>
 
-Design a docs site that looks great and empowers your users.
+    <Step title="Use with AI tools">
+      Upload the generated file to your favorite AI assistant:
+      
+      <Note>
+      Send the file to Claude, ChatGPT, or any LLM with a prompt like: "This file contains my entire codebase. Please review the architecture and suggest improvements."
+      </Note>
+    </Step>
+  </Steps>
+</div>
 
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
-  </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
-  </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
-  </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
-  </Card>
-</Columns>
+<div className="bg-gray-50 dark:bg-gray-900 py-16">
+  <div className="mx-auto max-w-7xl px-6 lg:px-8">
+    <div className="mx-auto max-w-2xl text-center mb-12">
+      <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Key Features</h2>
+      <p className="mt-4 text-base text-gray-600 dark:text-gray-400">
+        Everything you need to prepare your codebase for AI analysis
+      </p>
+    </div>
 
-## Create beautiful pages
+    <CardGroup cols={3}>
+      <Card title="AI-Optimized Output" icon="brain" href="/concepts/output-formats">
+        Choose from XML, Markdown, JSON, or Plain Text formats optimized for LLM consumption.
+      </Card>
+      <Card title="Token Counting" icon="calculator" href="/guides/token-optimization">
+        Built-in token counting helps you stay within LLM context limits.
+      </Card>
+      <Card title="Git-Aware Filtering" icon="git" href="/concepts/file-selection">
+        Automatically respects .gitignore, .ignore, and custom patterns.
+      </Card>
+      <Card title="Security Scanning" icon="shield-check" href="/concepts/security">
+        Built-in Secretlint integration detects and prevents sensitive data leaks.
+      </Card>
+      <Card title="Code Compression" icon="compress" href="/guides/compression">
+        Tree-sitter powered compression reduces token count by ~70% while preserving structure.
+      </Card>
+      <Card title="Remote Repositories" icon="cloud" href="/guides/remote-repositories">
+        Process any GitHub repository without manual cloning.
+      </Card>
+    </CardGroup>
+  </div>
+</div>
 
-Everything you need to create world-class documentation.
+<div className="mx-auto max-w-7xl px-6 py-16 lg:px-8">
+  <div className="mx-auto max-w-2xl text-center mb-12">
+    <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Explore by Topic</h2>
+    <p className="mt-4 text-base text-gray-600 dark:text-gray-400">
+      Learn how to use Repomix effectively
+    </p>
+  </div>
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+  <CardGroup cols={2}>
+    <Card title="Core Concepts" icon="book-open" href="/concepts/how-it-works">
+      Understand how Repomix processes and packages your codebase.
+    </Card>
+    <Card title="Usage Guides" icon="map" href="/guides/basic-usage">
+      Step-by-step guides for common workflows and use cases.
+    </Card>
+    <Card title="Configuration" icon="gear" href="/configuration/overview">
+      Customize Repomix behavior with configuration files.
+    </Card>
+    <Card title="CLI Reference" icon="terminal" href="/cli/overview">
+      Complete reference for all commands and options.
+    </Card>
+    <Card title="Integrations" icon="plug" href="/integrations/mcp-server">
+      Connect Repomix with Claude Code, VS Code, and more.
+    </Card>
+    <Card title="Advanced Features" icon="rocket" href="/advanced/programmatic-api">
+      Programmatic API, custom instructions, and git integration.
+    </Card>
+  </CardGroup>
+</div>
 
-## Need inspiration?
+<div className="bg-gray-50 dark:bg-gray-900 py-16">
+  <div className="mx-auto max-w-7xl px-6 lg:px-8">
+    <div className="mx-auto max-w-2xl text-center mb-12">
+      <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Integrations</h2>
+      <p className="mt-4 text-base text-gray-600 dark:text-gray-400">
+        Use Repomix across your development workflow
+      </p>
+    </div>
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+    <CardGroup cols={2}>
+      <Card title="MCP Server" icon="server" href="/integrations/mcp-server">
+        Run Repomix as a Model Context Protocol server for seamless AI integration.
+      </Card>
+      <Card title="Claude Code Plugins" icon="puzzle-piece" href="/integrations/claude-code">
+        Official plugins for Claude Code with slash commands and AI analysis.
+      </Card>
+      <Card title="Browser Extension" icon="chrome" href="/integrations/browser-extension">
+        One-click Repomix access from any GitHub repository page.
+      </Card>
+      <Card title="VS Code Extension" icon="code" href="/integrations/vscode-extension">
+        Run Repomix directly from your editor with Repomix Runner.
+      </Card>
+    </CardGroup>
+  </div>
+</div>
+
+<div className="mx-auto max-w-7xl px-6 py-16 lg:px-8">
+  <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 p-8 md:p-12 text-center">
+    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+      Ready to Get Started?
+    </h2>
+    <p className="text-base text-gray-600 dark:text-gray-400 mb-8 max-w-2xl mx-auto">
+      Install Repomix and start packing your codebase for AI analysis in minutes.
+    </p>
+    <a
+      href="/quickstart"
+      className="inline-flex items-center rounded-lg bg-[#eb7c3c] px-6 py-3 text-base font-semibold text-white hover:bg-[#d46a2f] transition-colors no-underline"
+    >
+      View Quickstart Guide
+      <svg className="ml-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+      </svg>
+    </a>
+  </div>
+</div>

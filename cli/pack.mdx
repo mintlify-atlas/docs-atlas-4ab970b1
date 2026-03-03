@@ -1,0 +1,370 @@
+---
+title: Pack Command
+description: Pack repository contents into a single AI-friendly file
+---
+
+The pack command is Repomix's default operation that collects files from specified directories and combines them into a single output file.
+
+## Syntax
+
+```bash
+repomix [directories...] [options]
+```
+
+## Arguments
+
+### Directories
+
+**Type:** `string[]`  
+**Default:** `["."]`
+
+List of directories to process. If no directories are specified, the current directory is used.
+
+```bash
+# Pack current directory
+repomix
+
+# Pack specific directories
+repomix src tests docs
+
+# Pack with absolute paths
+repomix /path/to/project
+```
+
+## Output Formats
+
+Repomix supports multiple output formats controlled by the `--style` option:
+
+### XML Format (Default)
+
+```bash
+repomix --style xml
+```
+
+Generates structured XML output with file metadata and contents.
+
+**Default filename:** `repomix-output.xml`
+
+### Markdown Format
+
+```bash
+repomix --style markdown
+```
+
+Generates Markdown with code blocks for each file.
+
+**Default filename:** `repomix-output.md`
+
+### JSON Format
+
+```bash
+repomix --style json
+```
+
+Generates machine-readable JSON with complete metadata.
+
+**Default filename:** `repomix-output.json`
+
+### Plain Text Format
+
+```bash
+repomix --style plain
+```
+
+Generates simple text format without markup.
+
+**Default filename:** `repomix-output.txt`
+
+## Common Options
+
+### Output File
+
+<ParamField path="--output" type="string" default="repomix-output.xml">
+  Specify the output file path. Use `"-"` for stdout.
+
+  ```bash
+  repomix --output my-pack.xml
+  repomix --output /tmp/output.xml
+  repomix --output -  # Write to stdout
+  ```
+</ParamField>
+
+### Include Patterns
+
+<ParamField path="--include" type="string">
+  Include only files matching these glob patterns (comma-separated).
+
+  ```bash
+  # Include only JavaScript files
+  repomix --include "**/*.js"
+
+  # Include multiple patterns
+  repomix --include "src/**/*.ts,**/*.md"
+  ```
+</ParamField>
+
+### Ignore Patterns
+
+<ParamField path="--ignore" type="string">
+  Exclude files matching these patterns (comma-separated).
+
+  ```bash
+  # Ignore test files
+  repomix --ignore "**/*.test.js"
+
+  # Ignore multiple patterns
+  repomix --ignore "*.test.js,docs/**,*.log"
+  ```
+</ParamField>
+
+### Copy to Clipboard
+
+<ParamField path="--copy" type="boolean">
+  Copy the generated output to system clipboard after processing.
+
+  ```bash
+  repomix --copy
+  ```
+</ParamField>
+
+## Processing Options
+
+### Remove Comments
+
+<ParamField path="--remove-comments" type="boolean">
+  Strip all code comments before packing.
+
+  ```bash
+  repomix --remove-comments
+  ```
+</ParamField>
+
+### Remove Empty Lines
+
+<ParamField path="--remove-empty-lines" type="boolean">
+  Remove blank lines from all files.
+
+  ```bash
+  repomix --remove-empty-lines
+  ```
+</ParamField>
+
+### Compress
+
+<ParamField path="--compress" type="boolean">
+  Extract essential code structure (classes, functions, interfaces) using Tree-sitter parsing.
+
+  ```bash
+  repomix --compress
+  ```
+</ParamField>
+
+## Advanced Options
+
+### Split Output
+
+<ParamField path="--split-output" type="string">
+  Split output into multiple numbered files. Accepts sizes like `500kb`, `2mb`, or `2.5mb`.
+
+  ```bash
+  # Split into 2MB chunks
+  repomix --split-output 2mb
+
+  # Split into 500KB chunks
+  repomix --split-output 500kb
+  ```
+
+  Output files will be named: `repomix-output.1.xml`, `repomix-output.2.xml`, etc.
+</ParamField>
+
+### Custom Header
+
+<ParamField path="--header-text" type="string">
+  Custom text to include at the beginning of the output.
+
+  ```bash
+  repomix --header-text "Project: MyApp v1.0"
+  ```
+</ParamField>
+
+### Instruction File
+
+<ParamField path="--instruction-file-path" type="string">
+  Path to file containing custom instructions to include in output.
+
+  ```bash
+  repomix --instruction-file-path ./instructions.txt
+  ```
+</ParamField>
+
+### Show Line Numbers
+
+<ParamField path="--output-show-line-numbers" type="boolean">
+  Prefix each line with its line number in the output.
+
+  ```bash
+  repomix --output-show-line-numbers
+  ```
+</ParamField>
+
+## Git Integration
+
+### Sort by Git Changes
+
+<ParamField path="--no-git-sort-by-changes" type="boolean">
+  Don't sort files by git change frequency. By default, most changed files are listed first.
+
+  ```bash
+  repomix --no-git-sort-by-changes
+  ```
+</ParamField>
+
+### Include Diffs
+
+<ParamField path="--include-diffs" type="boolean">
+  Add git diff section showing working tree and staged changes.
+
+  ```bash
+  repomix --include-diffs
+  ```
+</ParamField>
+
+### Include Git Logs
+
+<ParamField path="--include-logs" type="boolean">
+  Add git commit history with messages and changed files.
+
+  ```bash
+  # Include last 50 commits (default)
+  repomix --include-logs
+
+  # Include specific number of commits
+  repomix --include-logs --include-logs-count 100
+  ```
+</ParamField>
+
+<ParamField path="--include-logs-count" type="number" default="50">
+  Number of recent commits to include with `--include-logs`.
+
+  ```bash
+  repomix --include-logs --include-logs-count 20
+  ```
+</ParamField>
+
+## Output Control
+
+### Disable File Summary
+
+<ParamField path="--no-file-summary" type="boolean">
+  Omit the file summary section from output.
+
+  ```bash
+  repomix --no-file-summary
+  ```
+</ParamField>
+
+### Disable Directory Structure
+
+<ParamField path="--no-directory-structure" type="boolean">
+  Omit the directory tree visualization from output.
+
+  ```bash
+  repomix --no-directory-structure
+  ```
+</ParamField>
+
+### Metadata Only
+
+<ParamField path="--no-files" type="boolean">
+  Generate metadata only without file contents (useful for repository analysis).
+
+  ```bash
+  repomix --no-files
+  ```
+</ParamField>
+
+### Directory Structure Options
+
+<ParamField path="--include-empty-directories" type="boolean">
+  Include folders with no files in directory structure.
+
+  ```bash
+  repomix --include-empty-directories
+  ```
+</ParamField>
+
+<ParamField path="--include-full-directory-structure" type="boolean">
+  Show entire repository tree in the Directory Structure section, even when using `--include` patterns.
+
+  ```bash
+  repomix --include "src/**/*.ts" --include-full-directory-structure
+  ```
+</ParamField>
+
+## stdin Mode
+
+<ParamField path="--stdin" type="boolean">
+  Read file paths from stdin, one per line. Specified files are processed directly without pattern matching.
+
+  ```bash
+  # Using with find
+  find src -name "*.ts" | repomix --stdin
+
+  # Using with git
+  git ls-files | repomix --stdin
+
+  # Using with fzf
+  fzf -m | repomix --stdin
+  ```
+</ParamField>
+
+## Examples
+
+### Basic Pack
+
+```bash
+repomix
+```
+
+### Pack Multiple Directories
+
+```bash
+repomix src tests
+```
+
+### Pack with Markdown Output
+
+```bash
+repomix --style markdown --output README-PACK.md
+```
+
+### Pack Only TypeScript Files
+
+```bash
+repomix --include "**/*.ts,**/*.tsx"
+```
+
+### Pack and Copy to Clipboard
+
+```bash
+repomix --copy
+```
+
+### Pack with Cleaned Code
+
+```bash
+repomix --remove-comments --remove-empty-lines
+```
+
+### Pack with Git History
+
+```bash
+repomix --include-logs --include-logs-count 50
+```
+
+### Pack to stdout for Piping
+
+```bash
+repomix --stdout | pbcopy  # macOS
+repomix --stdout | xclip   # Linux
+```

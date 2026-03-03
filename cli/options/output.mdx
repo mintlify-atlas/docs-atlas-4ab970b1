@@ -1,0 +1,508 @@
+---
+title: Output Options
+description: Format, styling, and content customization options
+---
+
+Output options control the format, content, and structure of the generated pack file.
+
+## Format and Style
+
+<ParamField path="--output" alias="-o" type="string" default="repomix-output.xml">
+  Output file path. Use `"-"` for stdout.
+
+  ```bash
+  # Custom filename
+  repomix --output my-pack.xml
+
+  # Different directory
+  repomix --output /tmp/output.xml
+
+  # stdout shorthand
+  repomix --output -
+  ```
+</ParamField>
+
+<ParamField path="--style" type="string" default="xml">
+  Output format: `xml`, `markdown`, `json`, or `plain`.
+
+  ```bash
+  # XML format (default)
+  repomix --style xml
+
+  # Markdown format
+  repomix --style markdown
+
+  # JSON format
+  repomix --style json
+
+  # Plain text format
+  repomix --style plain
+  ```
+
+  **Default filenames by style:**
+  - `xml` → `repomix-output.xml`
+  - `markdown` → `repomix-output.md`
+  - `json` → `repomix-output.json`
+  - `plain` → `repomix-output.txt`
+</ParamField>
+
+<ParamField path="--parsable-style" type="boolean">
+  Escape special characters to ensure valid XML/Markdown. Needed when output contains code that breaks formatting.
+
+  ```bash
+  repomix --parsable-style
+  ```
+
+  **Use when:**
+  - Files contain XML/Markdown syntax
+  - Output has formatting conflicts
+  - Need strict schema compliance
+
+  **Example:**
+  ```bash
+  # For repos with markdown files
+  repomix --style xml --parsable-style
+  ```
+</ParamField>
+
+## Content Processing
+
+<ParamField path="--compress" type="boolean">
+  Extract essential code structure (classes, functions, interfaces) using Tree-sitter parsing.
+
+  ```bash
+  repomix --compress
+  ```
+
+  **Extracts:**
+  - Function/method signatures
+  - Class definitions
+  - Interface definitions
+  - Type definitions
+  - Export statements
+
+  **Removes:**
+  - Function bodies (replaced with `...`)
+  - Implementation details
+  - Comments
+  - Whitespace
+
+  **Example output:**
+  ```typescript
+  export function processFile(path: string): Promise<Result> { ... }
+  export class FileProcessor { ... }
+  export interface Config { ... }
+  ```
+</ParamField>
+
+<ParamField path="--remove-comments" type="boolean">
+  Strip all code comments before packing.
+
+  ```bash
+  repomix --remove-comments
+  ```
+
+  **Removes:**
+  - Single-line comments (`//`, `#`, etc.)
+  - Multi-line comments (`/* */`, `""" """`, etc.)
+  - Documentation comments (JSDoc, etc.)
+
+  **Example:**
+  ```bash
+  # Clean code output
+  repomix --remove-comments --remove-empty-lines
+  ```
+</ParamField>
+
+<ParamField path="--remove-empty-lines" type="boolean">
+  Remove blank lines from all files.
+
+  ```bash
+  repomix --remove-empty-lines
+  ```
+
+  **Use with:**
+  ```bash
+  # Maximum compression
+  repomix --remove-comments --remove-empty-lines --compress
+  ```
+</ParamField>
+
+<ParamField path="--truncate-base64" type="boolean">
+  Truncate long base64 data strings to reduce output size.
+
+  ```bash
+  repomix --truncate-base64
+  ```
+
+  **Useful for:**
+  - Files with embedded images
+  - Serialized binary data
+  - Large data URIs
+
+  **Example:**
+  ```
+  Before: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...(10,000 chars)
+  After:  data:image/png;base64,iVBORw0KGgo...[truncated]
+  ```
+</ParamField>
+
+## Line Numbers
+
+<ParamField path="--output-show-line-numbers" type="boolean">
+  Prefix each line with its line number in the output.
+
+  ```bash
+  repomix --output-show-line-numbers
+  ```
+
+  **Output format:**
+  ```
+  1: import express from 'express';
+  2: import cors from 'cors';
+  3:
+  4: const app = express();
+  ```
+
+  **Useful for:**
+  - Referencing specific lines
+  - Code review
+  - AI assistants citing line numbers
+</ParamField>
+
+## Section Control
+
+<ParamField path="--no-file-summary" type="boolean">
+  Omit the file summary section from output.
+
+  ```bash
+  repomix --no-file-summary
+  ```
+
+  **Removes:**
+  - File list with sizes
+  - Token counts per file
+  - File statistics
+</ParamField>
+
+<ParamField path="--no-directory-structure" type="boolean">
+  Omit the directory tree visualization from output.
+
+  ```bash
+  repomix --no-directory-structure
+  ```
+
+  **Removes:**
+  ```
+  Directory Structure:
+  src/
+    index.ts
+    utils/
+      helper.ts
+  ```
+</ParamField>
+
+<ParamField path="--no-files" type="boolean">
+  Generate metadata only without file contents. Useful for repository analysis.
+
+  ```bash
+  repomix --no-files
+  ```
+
+  **Includes only:**
+  - Directory structure
+  - File list and sizes
+  - Statistics
+  - Metadata
+
+  **Excludes:**
+  - Actual file contents
+
+  **Use case:**
+  ```bash
+  # Quick repository analysis
+  repomix --no-files --style json > metadata.json
+  ```
+</ParamField>
+
+## Custom Content
+
+<ParamField path="--header-text" type="string">
+  Custom text to include at the beginning of the output.
+
+  ```bash
+  repomix --header-text "Project: MyApp v1.0"
+  ```
+
+  **Examples:**
+  ```bash
+  # Project info
+  repomix --header-text "MyApp - Production Codebase"
+
+  # Instructions for AI
+  repomix --header-text "Please review this code for security issues"
+
+  # Multiline (using quotes)
+  repomix --header-text "Project: MyApp
+Version: 1.0.0
+Date: 2024-01-01"
+  ```
+</ParamField>
+
+<ParamField path="--instruction-file-path" type="string">
+  Path to file containing custom instructions to include in output.
+
+  ```bash
+  repomix --instruction-file-path ./instructions.txt
+  ```
+
+  **instructions.txt example:**
+  ```
+  Please analyze this codebase and:
+  1. Identify potential security vulnerabilities
+  2. Suggest performance improvements
+  3. Check for code style consistency
+  ```
+
+  **Usage:**
+  ```bash
+  repomix --instruction-file-path ./ai-instructions.md
+  ```
+</ParamField>
+
+## Directory Structure Options
+
+<ParamField path="--include-empty-directories" type="boolean">
+  Include folders with no files in directory structure.
+
+  ```bash
+  repomix --include-empty-directories
+  ```
+
+  **Shows:**
+  ```
+  src/
+    index.ts
+    empty-folder/        ← Shown with flag
+    utils/
+      helper.ts
+  ```
+</ParamField>
+
+<ParamField path="--include-full-directory-structure" type="boolean">
+  Show entire repository tree in the Directory Structure section, even when using `--include` patterns.
+
+  ```bash
+  repomix --include "src/**/*.ts" --include-full-directory-structure
+  ```
+
+  **Without flag:**
+  ```
+  Directory Structure:
+  src/
+    index.ts
+    utils/
+      helper.ts
+  ```
+
+  **With flag:**
+  ```
+  Directory Structure:
+  src/
+    index.ts
+    index.js         ← Also shown
+    utils/
+      helper.ts
+      helper.js      ← Also shown
+    tests/           ← Also shown
+  ```
+</ParamField>
+
+## Split Output
+
+<ParamField path="--split-output" type="string">
+  Split output into multiple numbered files. Accepts sizes like `500kb`, `2mb`, or `2.5mb`.
+
+  ```bash
+  # Split into 2MB chunks
+  repomix --split-output 2mb
+
+  # Split into 500KB chunks
+  repomix --split-output 500kb
+
+  # Split into 1.5MB chunks
+  repomix --split-output 1.5mb
+  ```
+
+  **Cannot be used with:** `--stdout`, `--copy`, `--skill-generate`
+
+  **Output files:**
+  ```
+  repomix-output.1.xml
+  repomix-output.2.xml
+  repomix-output.3.xml
+  ...
+  ```
+
+  **Size format:**
+  - `kb` or `KB` - Kilobytes
+  - `mb` or `MB` - Megabytes
+  - Decimals supported: `1.5mb`, `2.5mb`
+
+  **Use case:**
+  ```bash
+  # Large repos exceeding AI context limits
+  repomix --split-output 2mb --style markdown
+  ```
+</ParamField>
+
+## Git Integration
+
+<ParamField path="--no-git-sort-by-changes" type="boolean">
+  Don't sort files by git change frequency. By default, most changed files are listed first.
+
+  ```bash
+  repomix --no-git-sort-by-changes
+  ```
+
+  **Default behavior:**
+  - Files sorted by git change count (most changed first)
+  - Helps prioritize actively developed code
+
+  **With flag:**
+  - Files sorted alphabetically
+  - Standard directory order
+</ParamField>
+
+<ParamField path="--include-diffs" type="boolean">
+  Add git diff section showing working tree and staged changes.
+
+  ```bash
+  repomix --include-diffs
+  ```
+
+  **Includes:**
+  - Unstaged changes (working tree)
+  - Staged changes (index)
+  - Unified diff format
+
+  **Example output:**
+  ```diff
+  Git Diffs:
+
+  --- a/src/index.ts
+  +++ b/src/index.ts
+  @@ -1,3 +1,4 @@
+   import express from 'express';
+  +import cors from 'cors';
+  ```
+</ParamField>
+
+<ParamField path="--include-logs" type="boolean">
+  Add git commit history with messages and changed files.
+
+  ```bash
+  # Default: last 50 commits
+  repomix --include-logs
+
+  # Custom count
+  repomix --include-logs --include-logs-count 100
+  ```
+
+  **Includes:**
+  - Commit hash
+  - Author and date
+  - Commit message
+  - Changed files
+</ParamField>
+
+<ParamField path="--include-logs-count" type="number" default="50">
+  Number of recent commits to include with `--include-logs`.
+
+  ```bash
+  repomix --include-logs --include-logs-count 20
+  ```
+
+  **Must be:** Non-negative integer
+
+  **Examples:**
+  ```bash
+  # Last 10 commits
+  repomix --include-logs --include-logs-count 10
+
+  # Last 200 commits
+  repomix --include-logs --include-logs-count 200
+  ```
+</ParamField>
+
+## Examples
+
+### Basic Output
+
+```bash
+# Default XML
+repomix
+
+# Markdown format
+repomix --style markdown
+
+# Custom output path
+repomix --output ./dist/pack.xml
+```
+
+### Clean Code Output
+
+```bash
+# Remove comments and blank lines
+repomix --remove-comments --remove-empty-lines
+
+# Maximum compression
+repomix --compress --remove-comments --remove-empty-lines
+```
+
+### Structured Analysis
+
+```bash
+# Just metadata
+repomix --no-files --style json
+
+# With git history
+repomix --include-logs --include-logs-count 100 --include-diffs
+```
+
+### Custom Instructions
+
+```bash
+# Header text
+repomix --header-text "Security audit for MyApp v2.0"
+
+# Instruction file
+repomix --instruction-file-path ./review-checklist.md
+```
+
+### Split for AI
+
+```bash
+# Split into 2MB chunks
+repomix --split-output 2mb --style markdown
+
+# Process each chunk
+for file in repomix-output.*.md; do
+  cat "$file" | ai-tool analyze
+done
+```
+
+### Complete Example
+
+```bash
+repomix \
+  --style markdown \
+  --output review.md \
+  --remove-comments \
+  --remove-empty-lines \
+  --output-show-line-numbers \
+  --include-logs \
+  --include-logs-count 50 \
+  --header-text "Code Review - Sprint 23" \
+  --instruction-file-path ./review-instructions.md
+```

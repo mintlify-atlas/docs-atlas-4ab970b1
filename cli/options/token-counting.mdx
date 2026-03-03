@@ -1,0 +1,444 @@
+---
+title: Token Counting Options
+description: Token counting and encoding configuration
+---
+
+Token counting options control how Repomix counts tokens for AI model context estimation.
+
+## Token Count Encoding
+
+<ParamField path="--token-count-encoding" type="string" default="o200k_base">
+  Tokenizer model for counting tokens.
+
+  ```bash
+  # GPT-4o (default)
+  repomix --token-count-encoding o200k_base
+
+  # GPT-4/3.5
+  repomix --token-count-encoding cl100k_base
+
+  # GPT-3
+  repomix --token-count-encoding p50k_base
+  ```
+
+  **Available encodings:**
+  - `o200k_base` - GPT-4o, GPT-4o-mini (default)
+  - `cl100k_base` - GPT-4, GPT-3.5-turbo, text-embedding-ada-002
+  - `p50k_base` - GPT-3 (Davinci, Curie, Babbage, Ada)
+  - `p50k_edit` - GPT-3 edit models
+  - `r50k_base` - GPT-3 (older models)
+</ParamField>
+
+## Why Token Counting Matters
+
+AI models have context limits measured in tokens:
+
+- **GPT-4o** - 128,000 tokens
+- **GPT-4-turbo** - 128,000 tokens  
+- **GPT-3.5-turbo** - 16,385 tokens
+- **Claude 3** - 200,000 tokens
+
+Repomix counts tokens to help you:
+
+1. **Estimate context usage** - Know if output fits model limits
+2. **Optimize packing** - Remove unnecessary files
+3. **Split intelligently** - Use `--split-output` with appropriate sizes
+4. **Compare files** - See which files use most tokens
+
+## Token Count Display
+
+Repomix shows token counts in several places:
+
+### Summary Output
+
+```
+📊 Summary:
+   Total Files: 42
+   Total Characters: 125,430
+   Total Tokens: 31,250
+```
+
+### File Summary
+
+```
+Top 5 Largest Files:
+1. src/parser.ts (3,450 tokens)
+2. src/generator.ts (2,890 tokens)
+3. src/validator.ts (2,120 tokens)
+...
+```
+
+### Token Count Tree
+
+See [--token-count-tree](/cli/options/basic#token-count-tree) for visualization.
+
+## Encoding Selection Guide
+
+### For GPT-4o (Latest)
+
+```bash
+repomix --token-count-encoding o200k_base
+```
+
+**Use for:**
+- GPT-4o
+- GPT-4o-mini
+- Latest OpenAI models
+
+### For GPT-4/3.5
+
+```bash
+repomix --token-count-encoding cl100k_base
+```
+
+**Use for:**
+- GPT-4
+- GPT-4-turbo
+- GPT-3.5-turbo
+- text-embedding-ada-002
+
+### For Claude
+
+```bash
+repomix --token-count-encoding cl100k_base
+```
+
+**Note:** Claude uses a similar tokenizer to GPT-4. Counts will be approximate.
+
+### For GPT-3 (Legacy)
+
+```bash
+repomix --token-count-encoding p50k_base
+```
+
+**Use for:**
+- text-davinci-003
+- text-curie-001
+- text-babbage-001
+- text-ada-001
+
+## Token Count Features
+
+Repomix provides several features for token analysis:
+
+### 1. Total Count
+
+Shown in summary after packing:
+
+```bash
+repomix
+```
+
+```
+✓ Packing completed!
+📊 Total Tokens: 31,250
+```
+
+### 2. Per-File Counts
+
+Shown in file summary section:
+
+```bash
+repomix --verbose
+```
+
+```
+Processing files:
+  ✓ src/index.ts (1,234 tokens)
+  ✓ src/utils.ts (567 tokens)
+  ...
+```
+
+### 3. Top Files
+
+Largest files by token count:
+
+```bash
+repomix --top-files-len 10
+```
+
+```
+Top 10 Largest Files:
+1. src/parser.ts (3,450 tokens)
+2. src/generator.ts (2,890 tokens)
+...
+```
+
+### 4. Token Tree
+
+Hierarchical view with token counts:
+
+```bash
+repomix --token-count-tree
+```
+
+```
+Token Count Tree:
+src/ (15,234 tokens)
+  index.ts (1,234 tokens)
+  utils/ (5,678 tokens)
+    helper.ts (2,345 tokens)
+    parser.ts (3,333 tokens)
+```
+
+See [--token-count-tree](/cli/options/basic#token-count-tree) for details.
+
+### 5. Filtered Token Tree
+
+Show only files above threshold:
+
+```bash
+repomix --token-count-tree 1000
+```
+
+```
+Token Count Tree (≥1000 tokens):
+src/
+  index.ts (1,234 tokens)
+  parser.ts (3,333 tokens)
+```
+
+## Optimizing Token Usage
+
+### 1. Remove Comments
+
+```bash
+repomix --remove-comments
+```
+
+Typically saves 10-30% tokens.
+
+### 2. Remove Empty Lines
+
+```bash
+repomix --remove-empty-lines
+```
+
+Typically saves 5-15% tokens.
+
+### 3. Compress Code
+
+```bash
+repomix --compress
+```
+
+Saves 50-80% tokens by keeping only structure.
+
+### 4. Filter Files
+
+```bash
+# Only essential files
+repomix --include "src/**/*.ts" --ignore "**/*.test.ts"
+```
+
+### 5. Combine Techniques
+
+```bash
+# Maximum optimization
+repomix \
+  --remove-comments \
+  --remove-empty-lines \
+  --compress \
+  --include "src/**" \
+  --ignore "**/*.test.*"
+```
+
+## Token Count Analysis
+
+### Identify Large Files
+
+```bash
+# Show top 20 files
+repomix --top-files-len 20 --token-count-tree 500
+```
+
+### Compare Before/After
+
+```bash
+# Baseline
+repomix --output baseline.xml
+# Total Tokens: 50,000
+
+# Optimized
+repomix --remove-comments --remove-empty-lines --output optimized.xml
+# Total Tokens: 35,000 (30% reduction)
+```
+
+### Analyze by Directory
+
+```bash
+# Full token tree
+repomix --token-count-tree > token-analysis.txt
+
+# Review
+less token-analysis.txt
+```
+
+## Splitting for Context Limits
+
+### Calculate Split Size
+
+If your packed output is 100,000 tokens and model limit is 32,000:
+
+```bash
+# Split into ~30,000 token chunks
+repomix --split-output 2mb --token-count-encoding o200k_base
+```
+
+**Rule of thumb:**
+- 1 token ≈ 4 characters
+- 32,000 tokens ≈ 128KB
+- 100,000 tokens ≈ 400KB
+
+### Model-Specific Splits
+
+```bash
+# GPT-3.5-turbo (16K context)
+repomix --split-output 64kb --token-count-encoding cl100k_base
+
+# GPT-4 (128K context)
+repomix --split-output 512kb --token-count-encoding cl100k_base
+
+# Claude (200K context)
+repomix --split-output 800kb --token-count-encoding cl100k_base
+```
+
+## Examples
+
+### Basic Token Counting
+
+```bash
+# Default encoding (o200k_base)
+repomix
+```
+
+### Specific Model
+
+```bash
+# For GPT-4
+repomix --token-count-encoding cl100k_base
+
+# For GPT-3
+repomix --token-count-encoding p50k_base
+```
+
+### Detailed Analysis
+
+```bash
+repomix \
+  --token-count-encoding o200k_base \
+  --token-count-tree \
+  --top-files-len 20 \
+  --verbose
+```
+
+### Optimize for Token Limit
+
+```bash
+# Target: Under 30,000 tokens for GPT-3.5
+repomix \
+  --token-count-encoding cl100k_base \
+  --remove-comments \
+  --remove-empty-lines \
+  --include "src/**" \
+  --ignore "**/*.test.*" \
+  --top-files-len 20
+```
+
+### Find Large Files
+
+```bash
+# Only files with 1000+ tokens
+repomix \
+  --token-count-tree 1000 \
+  --top-files-len 50
+```
+
+### Compare Encodings
+
+```bash
+# GPT-4o encoding
+repomix --token-count-encoding o200k_base
+# Output: 31,250 tokens
+
+# GPT-4 encoding  
+repomix --token-count-encoding cl100k_base
+# Output: 32,100 tokens
+
+# GPT-3 encoding
+repomix --token-count-encoding p50k_base  
+# Output: 33,450 tokens
+```
+
+## Configuration File
+
+Set default encoding in `repomix.config.json`:
+
+```json
+{
+  "tokenCount": {
+    "encoding": "o200k_base"
+  }
+}
+```
+
+## Advanced Usage
+
+### Token Budget Workflow
+
+```bash
+#!/bin/bash
+# pack-with-budget.sh
+
+BUDGET=30000
+
+# Initial pack
+OUTPUT=$(repomix --token-count-encoding cl100k_base 2>&1)
+TOKENS=$(echo "$OUTPUT" | grep "Total Tokens" | awk '{print $3}')
+
+if [ "$TOKENS" -gt "$BUDGET" ]; then
+  echo "Exceeds budget ($TOKENS > $BUDGET), optimizing..."
+  
+  repomix \
+    --token-count-encoding cl100k_base \
+    --remove-comments \
+    --remove-empty-lines \
+    --ignore "**/*.test.*"
+    
+  TOKENS=$(repomix 2>&1 | grep "Total Tokens" | awk '{print $3}')
+  echo "Optimized: $TOKENS tokens"
+fi
+```
+
+### CI Token Validation
+
+```yaml
+# .github/workflows/validate-tokens.yml
+name: Validate Token Count
+
+on: [pull_request]
+
+jobs:
+  check-tokens:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Pack and check tokens
+        run: |
+          OUTPUT=$(npx repomix --token-count-encoding cl100k_base 2>&1)
+          TOKENS=$(echo "$OUTPUT" | grep "Total Tokens" | awk '{print $3}')
+          
+          if [ "$TOKENS" -gt 50000 ]; then
+            echo "Error: Pack exceeds 50,000 token limit ($TOKENS tokens)"
+            exit 1
+          fi
+          
+          echo "✓ Token count OK: $TOKENS tokens"
+```
+
+## Related
+
+- [Basic Options](/cli/options/basic) - Token count tree and top files
+- [Output Options](/cli/options/output) - Compression and optimization
+- [Configuration](/configuration/token-count) - Default encoding settings

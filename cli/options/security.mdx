@@ -1,0 +1,331 @@
+---
+title: Security Options
+description: Security scanning and sensitive data detection
+---
+
+Security options control Repomix's built-in security scanning that helps prevent accidentally including sensitive information in packed output.
+
+## Security Check
+
+<ParamField path="--no-security-check" type="boolean">
+  Skip scanning for sensitive data like API keys and passwords.
+
+  ```bash
+  repomix --no-security-check
+  ```
+
+  **Default behavior:**
+  Repomix scans all files for potential secrets and sensitive information before packing.
+
+  **With `--no-security-check`:**
+  Security scanning is completely disabled.
+</ParamField>
+
+## What is Scanned
+
+By default, Repomix scans for:
+
+### API Keys and Tokens
+
+- AWS access keys
+- GitHub tokens
+- API keys (generic patterns)
+- OAuth tokens
+- Service account keys
+
+### Credentials
+
+- Passwords in configuration files
+- Database connection strings
+- Authentication tokens
+- Private keys
+
+### Sensitive Patterns
+
+- Email addresses in sensitive contexts
+- Credit card numbers
+- Social security numbers
+- Other PII (Personally Identifiable Information)
+
+### Environment Variables
+
+- `.env` file contents
+- `SECRET_*` variables
+- `API_KEY_*` variables
+- `TOKEN_*` variables
+
+## Detection Behavior
+
+When sensitive data is detected:
+
+### Warning Display
+
+```
+⚠️  Security Warning: Potential sensitive data detected
+
+File: src/config.ts:12
+Pattern: AWS Access Key
+Value: AKIA****************XMPL
+```
+
+### Default Action
+
+By default, Repomix:
+1. Shows warnings for each detection
+2. Continues processing
+3. Includes the files in output
+
+**Note:** Warnings are informational only. Files are still included.
+
+### Recommended Actions
+
+When warnings appear:
+
+1. **Review the file** - Check if it actually contains secrets
+2. **Remove secrets** - Use environment variables instead
+3. **Ignore the file** - Add to `.repomixignore`
+4. **Use --no-security-check** - Only if you're certain
+
+## Common False Positives
+
+Security scanning may flag:
+
+- **Example code** - Demo API keys in documentation
+- **Test fixtures** - Mock credentials in tests
+- **Comments** - Explained security patterns
+- **Generated IDs** - Random strings matching key patterns
+
+## Disabling Security Checks
+
+### Temporary Disable
+
+```bash
+# For one-time use
+repomix --no-security-check
+```
+
+### Configuration File
+
+In `repomix.config.json`:
+
+```json
+{
+  "security": {
+    "enableSecurityCheck": false
+  }
+}
+```
+
+### Per-Project
+
+Create `.repomixignore` to exclude sensitive files:
+
+```gitignore
+# .repomixignore
+
+# Environment files
+.env
+.env.*
+*.env
+
+# Credentials
+credentials.json
+secrets.yaml
+
+# Keys
+*.pem
+*.key
+*.p12
+
+# Config with secrets
+config/production.json
+```
+
+## Best Practices
+
+### 1. Use Environment Variables
+
+**Bad:**
+```typescript
+// config.ts
+const API_KEY = 'sk-1234567890abcdef';
+```
+
+**Good:**
+```typescript
+// config.ts
+const API_KEY = process.env.API_KEY;
+```
+
+### 2. Ignore Sensitive Files
+
+Add to `.repomixignore`:
+
+```gitignore
+# Sensitive files
+.env
+.env.local
+.env.production
+credentials.json
+secrets/**
+```
+
+### 3. Use Example Files
+
+Provide `.env.example` instead of `.env`:
+
+```bash
+# .env.example
+API_KEY=your_api_key_here
+DATABASE_URL=postgresql://user:pass@localhost/db
+```
+
+### 4. Review Before Sharing
+
+Always review packed output before sharing:
+
+```bash
+# Pack with security check
+repomix
+
+# Review output
+less repomix-output.xml
+
+# Share if safe
+```
+
+## Examples
+
+### Standard Pack (with security check)
+
+```bash
+# Default behavior - scans for secrets
+repomix
+```
+
+### Skip Security Check
+
+```bash
+# Disable scanning
+repomix --no-security-check
+```
+
+### Pack Only Safe Files
+
+```bash
+# Exclude common sensitive files
+repomix --ignore ".env,.env.*,*.key,*.pem,credentials.*,secrets/**"
+```
+
+### Pack Public Code Only
+
+```bash
+# Only include src/ directory
+repomix --include "src/**" --ignore "**/*.env,**/credentials.*"
+```
+
+### Review Security Warnings
+
+```bash
+# Run with verbose to see all security checks
+repomix --verbose
+```
+
+### Safe Sharing Workflow
+
+```bash
+#!/bin/bash
+# safe-pack.sh
+
+# Pack with security check
+repomix --output temp-output.xml
+
+# Review output
+echo "Review the output for sensitive data:"
+grep -i "api.key\|password\|secret\|token" temp-output.xml
+
+# Confirm before proceeding
+read -p "Safe to share? (y/n) " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+  mv temp-output.xml repomix-output.xml
+  echo "Output ready: repomix-output.xml"
+else
+  rm temp-output.xml
+  echo "Output deleted. Review and try again."
+fi
+```
+
+## Configuration Reference
+
+### repomix.config.json
+
+```json
+{
+  "security": {
+    "enableSecurityCheck": true
+  }
+}
+```
+
+**Options:**
+- `enableSecurityCheck` (boolean) - Enable/disable security scanning
+  - `true` (default) - Scan for sensitive data
+  - `false` - Skip security checks
+
+## CI/CD Integration
+
+### GitHub Actions
+
+```yaml
+# .github/workflows/pack.yml
+name: Pack Repository
+
+on: [push]
+
+jobs:
+  pack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Pack with security check
+        run: |
+          npx repomix
+          
+      - name: Check for secrets in output
+        run: |
+          # Fail if common secret patterns found
+          if grep -E "(api.key|password|secret)" repomix-output.xml; then
+            echo "Potential secrets detected!"
+            exit 1
+          fi
+```
+
+### Pre-commit Hook
+
+```bash
+#!/bin/bash
+# .git/hooks/pre-commit
+
+# Pack and check for secrets
+repomix --quiet
+
+if grep -i "api.key\|password\|secret" repomix-output.xml; then
+  echo "Error: Potential secrets detected in repository"
+  exit 1
+fi
+```
+
+## Limitations
+
+- **Pattern-based** - May miss obfuscated secrets
+- **False positives** - May flag non-sensitive data
+- **No guarantee** - Manual review still recommended
+- **Limited scope** - Scans file contents only, not git history
+
+## Related
+
+- [File Selection Options](/cli/options/file-selection) - Exclude sensitive files
+- [Output Options](/cli/options/output) - Control what's included in output
+- [Configuration](/configuration/security) - Security configuration reference

@@ -1,0 +1,450 @@
+---
+title: Splitting Output
+description: Split large outputs into multiple files to work within AI tool file size limits
+---
+
+When working with large codebases, the packed output may exceed file size limits imposed by some AI tools. The `--split-output` option automatically splits the output into multiple files.
+
+## Why split output?
+
+Some AI platforms have file size restrictions:
+
+- **Google AI Studio**: 1MB file upload limit
+- **Some ChatGPT plans**: Upload limits on large files
+- **Email attachments**: Size restrictions
+- **Browser uploads**: Can be slow with very large files
+
+Splitting output creates multiple smaller files that stay within these limits.
+
+<Note>
+Files are grouped by top-level directory to maintain context. A single file or directory is never split across multiple output files.
+</Note>
+
+## Basic usage
+
+Specify the maximum size per output file:
+
+```bash
+repomix --split-output 1mb
+```
+
+This generates numbered files:
+```
+repomix-output.1.xml
+repomix-output.2.xml
+repomix-output.3.xml
+```
+
+## Size formats
+
+You can specify sizes using different units:
+
+<CodeGroup>
+
+```bash Kilobytes
+repomix --split-output 500kb
+```
+
+```bash Megabytes
+repomix --split-output 2mb
+```
+
+```bash Decimal values
+repomix --split-output 1.5mb
+```
+
+```bash Google AI Studio limit
+repomix --split-output 1mb
+```
+
+</CodeGroup>
+
+## How splitting works
+
+<Steps>
+  <Step title="Process repository">
+    Repomix collects and processes all files as usual.
+  </Step>
+  
+  <Step title="Group by directory">
+    Files are organized by their top-level directory:
+    - `src/`
+    - `tests/`
+    - `docs/`
+    - etc.
+  </Step>
+  
+  <Step title="Distribute to output files">
+    Directories are distributed across output files, ensuring no file exceeds the specified size limit.
+  </Step>
+  
+  <Step title="Maintain context">
+    Each output file includes:
+    - File summary section
+    - Complete directory structure
+    - Grouped files from one or more directories
+  </Step>
+</Steps>
+
+## Output file naming
+
+By default, split files are numbered sequentially:
+
+```bash
+repomix --split-output 1mb
+# Creates: repomix-output.1.xml, repomix-output.2.xml, etc.
+```
+
+With custom output filename:
+
+```bash
+repomix --split-output 1mb --output my-codebase.xml
+# Creates: my-codebase.1.xml, my-codebase.2.xml, etc.
+```
+
+With different format:
+
+```bash
+repomix --split-output 1mb --style markdown
+# Creates: repomix-output.1.md, repomix-output.2.md, etc.
+```
+
+## Real-world examples
+
+<Tabs>
+  <Tab title="Google AI Studio">
+    Google AI Studio has a 1MB upload limit:
+    
+    ```bash
+    repomix --split-output 1mb
+    ```
+    
+    Then upload each file individually:
+    1. Upload `repomix-output.1.xml`
+    2. Ask AI to analyze
+    3. Upload `repomix-output.2.xml`
+    4. Ask AI to continue analysis
+  </Tab>
+  
+  <Tab title="Large monorepo">
+    Split a huge codebase into manageable chunks:
+    
+    ```bash
+    # Split into 2MB chunks with compression
+    repomix --split-output 2mb --compress
+    ```
+    
+    Process each output file with AI separately, focusing on different aspects:
+    - File 1: Core architecture
+    - File 2: Utilities and helpers
+    - File 3: Tests and documentation
+  </Tab>
+  
+  <Tab title="Email sharing">
+    Email services often have attachment limits:
+    
+    ```bash
+    # Split into 2MB chunks for email
+    repomix --split-output 2mb --style markdown
+    ```
+    
+    Attach each `.md` file to separate emails or compress into a zip.
+  </Tab>
+  
+  <Tab title="Progressive analysis">
+    Analyze a large codebase progressively:
+    
+    ```bash
+    repomix --split-output 1.5mb
+    ```
+    
+    Upload files one at a time, letting AI build understanding incrementally.
+  </Tab>
+</Tabs>
+
+## Combine with optimization
+
+Reduce the need for splitting by optimizing first:
+
+<Steps>
+  <Step title="Check current size">
+    ```bash
+    repomix --verbose
+    ```
+    
+    See total characters and tokens.
+  </Step>
+  
+  <Step title="Apply compression">
+    ```bash
+    repomix --compress --verbose
+    ```
+    
+    Reduces tokens by ~70%, may avoid splitting entirely.
+  </Step>
+  
+  <Step title="Remove unnecessary content">
+    ```bash
+    repomix --compress --remove-comments --remove-empty-lines --verbose
+    ```
+    
+    Further size reduction.
+  </Step>
+  
+  <Step title="Split if still needed">
+    ```bash
+    repomix --compress --remove-comments --remove-empty-lines --split-output 1mb
+    ```
+    
+    Only split if optimization isn't enough.
+  </Step>
+</Steps>
+
+<Tip>
+Often, compression and selective file inclusion eliminate the need for splitting altogether.
+</Tip>
+
+## What's in each split file?
+
+Each output file contains:
+
+### 1. File summary
+
+Metadata about the packed repository:
+
+```xml
+<file_summary>
+  Purpose: AI-friendly representation of repository
+  Format: XML with files organized by directory
+  Usage: This is part 1 of 3 split files
+  ...
+</file_summary>
+```
+
+### 2. Complete directory structure
+
+The full repository tree is included in **every** split file:
+
+```xml
+<directory_structure>
+src/
+  cli/
+    actions/
+  core/
+    file/
+tests/
+  unit/
+</directory_structure>
+```
+
+This helps AI understand the overall structure, even when looking at a single split file.
+
+### 3. Grouped file contents
+
+Files from complete directories:
+
+```xml
+<files>
+  <file path="src/cli/actions/defaultAction.ts">
+    ...
+  </file>
+  <file path="src/cli/actions/initAction.ts">
+    ...
+  </file>
+  ...
+</files>
+```
+
+<Note>
+Directories are never split across files. If `src/cli/` is in `repomix-output.1.xml`, all files from `src/cli/` will be there.
+</Note>
+
+## Upload strategy for AI tools
+
+<Tabs>
+  <Tab title="Sequential upload">
+    Upload files one by one, building context:
+    
+    **Step 1:**
+    ```
+    Upload: repomix-output.1.xml
+    Prompt: "This is part 1 of 3. Please analyze the architecture of the src/cli module."
+    ```
+    
+    **Step 2:**
+    ```
+    Upload: repomix-output.2.xml
+    Prompt: "This is part 2 of 3. Now review the src/core module and how it integrates with cli."
+    ```
+    
+    **Step 3:**
+    ```
+    Upload: repomix-output.3.xml
+    Prompt: "This is part 3 of 3. Finally, review the tests and provide an overall assessment."
+    ```
+  </Tab>
+  
+  <Tab title="Topic-based analysis">
+    Upload relevant files for specific topics:
+    
+    **Architecture review:**
+    ```
+    Upload: repomix-output.1.xml (contains src/core)
+    Prompt: "Review the core architecture and design patterns."
+    ```
+    
+    **Test coverage:**
+    ```
+    Upload: repomix-output.3.xml (contains tests/)
+    Prompt: "Analyze test coverage and suggest improvements."
+    ```
+  </Tab>
+  
+  <Tab title="Batch processing">
+    For AI tools that support multiple files:
+    
+    ```
+    Upload: All split files at once
+    Prompt: "These files contain a complete codebase split into parts. Please provide a comprehensive review."
+    ```
+  </Tab>
+</Tabs>
+
+## Verify split output
+
+After splitting, check the generated files:
+
+```bash
+repomix --split-output 1mb --verbose
+```
+
+Output:
+```
+📦 Repomix v1.12.0
+
+✔ Repository files collected
+✔ Security check completed
+✔ File contents processed
+✔ Output files generated
+
+📊 Total Files: 250
+📊 Total Characters: 850,000
+📊 Total Tokens: 212,500
+
+✅ Split into 3 output files:
+   - repomix-output.1.xml (980 KB, 75 files)
+   - repomix-output.2.xml (950 KB, 92 files)
+   - repomix-output.3.xml (890 KB, 83 files)
+```
+
+Verify file sizes:
+
+```bash
+ls -lh repomix-output.*.xml
+```
+
+Output:
+```
+-rw-r--r--  1 user  staff   980K  repomix-output.1.xml
+-rw-r--r--  1 user  staff   950K  repomix-output.2.xml
+-rw-r--r--  1 user  staff   890K  repomix-output.3.xml
+```
+
+## Limitations and considerations
+
+<Warning>
+**Important limitations:**
+
+1. **Large single files**: If a single file exceeds the split size limit, it will still be included in one output file, which may exceed the limit.
+
+2. **Large directories**: If a top-level directory exceeds the split size, it will be in one output file (directories aren't split).
+
+3. **Context fragmentation**: Splitting can fragment context. AI may not see relationships between files in different output files.
+</Warning>
+
+### Mitigate limitations
+
+If you hit these limitations:
+
+```bash
+# Option 1: Increase split size
+repomix --split-output 2mb
+
+# Option 2: Use compression to reduce file sizes
+repomix --compress --split-output 1mb
+
+# Option 3: Be more selective with files
+repomix --include "src/core/**" --split-output 1mb
+
+# Option 4: Split by subdirectory manually
+repomix src/core --output core.xml
+repomix src/utils --output utils.xml
+```
+
+## Alternative approaches
+
+Before splitting, consider these alternatives:
+
+<Tabs>
+  <Tab title="Selective inclusion">
+    Pack only what you need:
+    
+    ```bash
+    # Instead of splitting everything
+    repomix --include "src/core/**,src/api/**"
+    ```
+  </Tab>
+  
+  <Tab title="Compression">
+    Reduce size dramatically:
+    
+    ```bash
+    # Reduces tokens by ~70%
+    repomix --compress
+    ```
+  </Tab>
+  
+  <Tab title="Multiple targeted packs">
+    Create focused outputs:
+    
+    ```bash
+    # Core functionality
+    repomix src/core --output core.xml
+    
+    # API layer
+    repomix src/api --output api.xml
+    
+    # Tests
+    repomix tests --output tests.xml
+    ```
+  </Tab>
+  
+  <Tab title="Different format">
+    Use more compact formats:
+    
+    ```bash
+    # Plain text is more compact than XML
+    repomix --style plain
+    ```
+  </Tab>
+</Tabs>
+
+## What's next?
+
+<CardGroup cols={2}>
+  <Card title="Token optimization" icon="chart-line" href="/guides/token-optimization">
+    Reduce token count to avoid splitting
+  </Card>
+  
+  <Card title="Compression" icon="file-zipper" href="/guides/compression">
+    Use Tree-sitter compression for smaller output
+  </Card>
+  
+  <Card title="Output formats" icon="file-code" href="/concepts/output-formats">
+    Choose the most compact format
+  </Card>
+  
+  <Card title="Configuration" icon="gear" href="/configuration/output-options">
+    Configure split settings in config file
+  </Card>
+</CardGroup>

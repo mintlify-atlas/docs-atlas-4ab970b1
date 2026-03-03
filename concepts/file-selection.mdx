@@ -1,0 +1,713 @@
+---
+title: File Selection
+description: Master include/exclude patterns, .gitignore integration, and file filtering
+---
+
+Repomix provides powerful file selection capabilities through glob patterns, ignore files, and multiple filtering mechanisms. This page explains how to control which files are included in your output.
+
+## File Selection Flow
+
+Files are selected through a multi-stage filtering process:
+
+```
+┌──────────────────────┐
+│  All Files in Repo   │
+└──────────┬───────────┘
+           │
+           ▼
+┌──────────────────────┐
+│  Apply Include       │  --include patterns
+│  Patterns            │  (default: all files)
+└──────────┬───────────┘
+           │
+           ▼
+┌──────────────────────┐
+│  Apply Ignore        │  1. Default patterns
+│  Patterns            │  2. .gitignore
+└──────────┬───────────┘  3. .repomixignore
+           │              4. Custom patterns
+           ▼
+┌──────────────────────┐
+│  Filter by Size      │  maxFileSize (default: 50MB)
+└──────────┬───────────┘
+           │
+           ▼
+┌──────────────────────┐
+│  Security Check      │  Secretlint scanning
+└──────────┬───────────┘
+           │
+           ▼
+┌──────────────────────┐
+│  Selected Files      │
+└──────────────────────┘
+```
+
+## Include Patterns
+
+Include patterns specify which files to process using glob syntax.
+
+### Basic Usage
+
+```bash CLI
+# Include only TypeScript files
+repomix --include "**/*.ts"
+
+# Include multiple patterns
+repomix --include "src/**" --include "lib/**"
+
+# Include specific file types
+repomix --include "**/*.{ts,tsx,js,jsx}"
+```
+
+```json repomix.config.json
+{
+  "include": [
+    "src/**",
+    "lib/**",
+    "**/*.{ts,tsx}"
+  ]
+}
+```
+
+### Glob Pattern Syntax
+
+<Tabs>
+  <Tab title="Wildcards">
+    ```bash
+    # Match any characters except /
+    *.ts              # All .ts files in root
+    src/*.ts          # All .ts files in src/
+    
+    # Match any characters including /
+    **/*.ts           # All .ts files recursively
+    src/**/*.test.ts  # All test files under src/
+    ```
+  </Tab>
+  
+  <Tab title="Braces">
+    ```bash
+    # Match one of the patterns
+    **/*.{ts,tsx,js,jsx}  # TypeScript and JavaScript files
+    src/{cli,core}/**     # Files in cli/ or core/ subdirs
+    
+    # Combine with wildcards
+    **/*.{test,spec}.{ts,js}  # All test files
+    ```
+  </Tab>
+  
+  <Tab title="Negation">
+    ```bash
+    # Exclude specific patterns (not recommended, use --ignore instead)
+    !**/*.test.ts     # Exclude test files
+    
+    # Better approach: use --ignore
+    --include "**/*.ts" --ignore "**/*.test.ts"
+    ```
+  </Tab>
+  
+  <Tab title="Character Sets">
+    ```bash
+    # Match character ranges
+    file[0-9].ts      # file0.ts through file9.ts
+    [A-Z]*.ts         # Files starting with uppercase
+    
+    # Match specific characters
+    file[abc].ts      # filea.ts, fileb.ts, filec.ts
+    ```
+  </Tab>
+</Tabs>
+
+### Default Behavior
+
+**When no include patterns are specified:**
+
+```typescript
+if (includePatterns.length === 0) {
+  includePatterns = ['**/*'];
+}
+```
+
+All files are included by default (subject to ignore patterns).
+
+### Pattern Escaping
+
+Repomix automatically escapes special characters in file paths:
+
+**Implementation:** `src/core/file/fileSearch.ts:67`
+
+```typescript
+export const escapeGlobPattern = (pattern: string): string => {
+  // Escape backslashes first
+  const escapedBackslashes = pattern.replace(/\\/g, '\\\\');
+  // Escape special characters () and [], but NOT {}
+  return escapedBackslashes.replace(/[()[\]]/g, '\\$&');
+};
+```
+
+This handles directories with special characters like `src/(categories)/page.ts`.
+
+## Ignore Patterns
+
+Ignore patterns exclude files from processing. Multiple ignore sources are combined:
+
+### 1. Default Patterns
+
+Repomix includes sensible defaults for common artifacts and dependencies.
+
+**Implementation:** `src/config/defaultIgnore.ts:1`
+
+<CodeGroup>
+```typescript Default Ignore List
+export const defaultIgnoreList = [
+  // Version control
+  '.git/**',
+  '.hg/**',
+  '.svn/**',
+  
+  // Dependencies
+  '**/node_modules/**',
+  '**/bower_components/**',
+  'vendor/**',
+  '**/.bundle/**',
+  '**/.gradle/**',
+  'target/**',
+  
+  // Build outputs
+  'dist/**',
+  'build/**',
+  'out/**',
+  '.next/**',
+  '.nuxt/**',
+  
+  // Caches
+  '.eslintcache',
+  '*.cache',
+  '**/.npm/**',
+  'coverage/**',
+  
+  // Logs
+  'logs/**',
+  '**/*.log',
+  
+  // Lock files
+  '**/package-lock.json',
+  '**/yarn.lock',
+  '**/pnpm-lock.yaml',
+  '**/Cargo.lock',
+  '**/poetry.lock',
+  
+  // Python
+  '**/__pycache__/**',
+  '**/*.py[cod]',
+  '**/venv/**',
+  '**/.venv/**',
+  
+  // Editors
+  '.idea/**',
+  '.vscode/**',
+  '**/*.swp',
+  
+  // OS files
+  '**/.DS_Store',
+  '**/Thumbs.db',
+  
+  // Repomix output
+  '**/repomix-output.*',
+];
+```
+
+```bash Disable Default Patterns
+# Disable all default ignore patterns
+repomix --no-default-patterns
+
+# Use custom patterns only
+repomix --no-default-patterns --ignore "*.log" --ignore "dist/**"
+```
+</CodeGroup>
+
+### 2. .gitignore Integration
+
+Repomix respects `.gitignore` files by default using globby's gitignore option.
+
+**Implementation:** `src/core/file/fileSearch.ts:314`
+
+```typescript
+const filePaths = await globby(includePatterns, {
+  cwd: rootDir,
+  gitignore: config.ignore.useGitignore, // default: true
+  // ...
+});
+```
+
+<Tabs>
+  <Tab title="Enabled (Default)">
+    ```bash
+    # .gitignore is respected by default
+    repomix
+    
+    # Explicitly enable
+    repomix --gitignore
+    ```
+    
+    **How it works:**
+    - Reads `.gitignore` files in all directories
+    - Nested `.gitignore` files have higher priority
+    - Follows Git's ignore pattern rules exactly
+  </Tab>
+  
+  <Tab title="Disabled">
+    ```bash
+    # Disable .gitignore integration
+    repomix --no-gitignore
+    
+    # Useful for including normally-ignored files
+    repomix --no-gitignore --include "dist/**"
+    ```
+    
+    <Warning>
+    Disabling gitignore may include build artifacts, dependencies, and other files you don't want in the output.
+    </Warning>
+  </Tab>
+  
+  <Tab title="Git Exclude Files">
+    Repomix also reads `.git/info/exclude`:
+    
+    ```typescript
+    if (config.ignore.useGitignore) {
+      const excludeFilePath = path.join(rootDir, '.git', 'info', 'exclude');
+      const excludeFileContent = await fs.readFile(excludeFilePath, 'utf8');
+      const excludePatterns = parseIgnoreContent(excludeFileContent);
+      // Add to ignore patterns
+    }
+    ```
+    
+    This respects local Git exclude rules.
+  </Tab>
+</Tabs>
+
+### 3. .repomixignore Files
+
+`.repomixignore` files use the same syntax as `.gitignore`.
+
+```bash .repomixignore
+# Ignore test files
+**/*.test.ts
+**/*.spec.ts
+
+# Ignore documentation
+docs/**
+*.md
+
+# Ignore configuration
+*.config.js
+tsconfig.json
+
+# Comments are supported
+# Blank lines are ignored
+```
+
+**Features:**
+- Always enabled (cannot be disabled)
+- Nested files have higher priority
+- Supports all gitignore pattern syntax
+
+**Pattern Parsing:** `src/core/file/fileSearch.ts:252`
+
+```typescript
+export const parseIgnoreContent = (content: string): string[] => {
+  return content.split('\n').reduce<string[]>((acc, line) => {
+    const trimmedLine = line.trim();
+    if (trimmedLine && !trimmedLine.startsWith('#')) {
+      acc.push(trimmedLine);
+    }
+    return acc;
+  }, []);
+};
+```
+
+### 4. .ignore Files
+
+Fd-style `.ignore` files are also supported.
+
+```bash
+# Enable .ignore files (enabled by default)
+repomix --dot-ignore
+
+# Disable .ignore files
+repomix --no-dot-ignore
+```
+
+**Priority:** Nested `.ignore` files override parent directory rules.
+
+### 5. Custom Ignore Patterns
+
+Add custom patterns via CLI or configuration:
+
+<CodeGroup>
+```bash CLI
+# Ignore specific patterns
+repomix --ignore "**/*.test.ts" --ignore "**/*.spec.ts"
+
+# Ignore directories
+repomix --ignore "tests/**" --ignore "docs/**"
+
+# Complex patterns
+repomix --ignore "**/._*" --ignore "**/*.{log,tmp}"
+```
+
+```json repomix.config.json
+{
+  "ignore": {
+    "customPatterns": [
+      "**/*.test.ts",
+      "**/*.spec.ts",
+      "tests/**",
+      "docs/**"
+    ]
+  }
+}
+```
+</CodeGroup>
+
+### Ignore Pattern Priority
+
+Ignore patterns are combined with the following priority (all sources are merged):
+
+**Implementation:** `src/core/file/fileSearch.ts:343`
+
+```typescript
+export const getIgnorePatterns = async (rootDir: string, config: RepomixConfigMerged) => {
+  const ignorePatterns = new Set<string>();
+  
+  // 1. Add default patterns
+  if (config.ignore.useDefaultPatterns) {
+    for (const pattern of defaultIgnoreList) {
+      ignorePatterns.add(pattern);
+    }
+  }
+  
+  // 2. Add repomix output file
+  if (config.output.filePath) {
+    ignorePatterns.add(relativeOutputPath);
+  }
+  
+  // 3. Add custom patterns
+  if (config.ignore.customPatterns) {
+    for (const pattern of config.ignore.customPatterns) {
+      ignorePatterns.add(pattern);
+    }
+  }
+  
+  // 4. Add .git/info/exclude patterns
+  if (config.ignore.useGitignore) {
+    const excludePatterns = parseGitExclude(rootDir);
+    for (const pattern of excludePatterns) {
+      ignorePatterns.add(pattern);
+    }
+  }
+  
+  return Array.from(ignorePatterns);
+};
+```
+
+## Pattern Normalization
+
+Repomix normalizes glob patterns for consistent behavior:
+
+**Implementation:** `src/core/file/fileSearch.ts:81`
+
+```typescript
+export const normalizeGlobPattern = (pattern: string): string => {
+  // Remove trailing slash (except for patterns ending with **/)
+  if (pattern.endsWith('/') && !pattern.endsWith('**/')) {
+    return pattern.slice(0, -1);
+  }
+  
+  // Convert **/folder to **/folder/** for consistent ignore behavior
+  if (pattern.startsWith('**/') && !pattern.includes('/**')) {
+    return `${pattern}/**`;
+  }
+  
+  return pattern;
+};
+```
+
+This makes `**/folder`, `**/folder/`, and `**/folder/**` behave identically.
+
+## Git Worktree Support
+
+Repomix handles Git worktrees correctly:
+
+**Implementation:** `src/core/file/fileSearch.ts:48`
+
+```typescript
+// Check if .git is a worktree reference file
+const isGitWorktreeRef = async (gitPath: string): Promise<boolean> => {
+  const stats = await fs.stat(gitPath);
+  if (!stats.isFile()) return false;
+  
+  const content = await fs.readFile(gitPath, 'utf8');
+  return content.startsWith('gitdir:');
+};
+
+// Adjust ignore patterns for worktrees
+if (isWorktree) {
+  // Remove '.git/**' pattern and add '.git' to ignore the reference file
+  const gitIndex = adjustedIgnorePatterns.indexOf('.git/**');
+  if (gitIndex !== -1) {
+    adjustedIgnorePatterns.splice(gitIndex, 1);
+    adjustedIgnorePatterns.push('.git');
+  }
+}
+```
+
+## File Size Limits
+
+Files exceeding the size limit are automatically skipped.
+
+```bash CLI
+# Set maximum file size (default: 50MB)
+repomix --input-max-file-size 10mb
+
+# Supported units: kb, mb, gb
+repomix --input-max-file-size 500kb
+```
+
+```json repomix.config.json
+{
+  "input": {
+    "maxFileSize": 10485760  // 10MB in bytes
+  }
+}
+```
+
+**Implementation:** `src/core/file/fileRead.ts`
+
+```typescript
+const stats = await fs.stat(filePath);
+if (stats.size > maxFileSize) {
+  return {
+    content: null,
+    skippedReason: 'size_exceeded',
+  };
+}
+```
+
+## Binary File Detection
+
+Binary files are automatically detected and excluded.
+
+```typescript
+// Check if file is binary by analyzing content
+const isBinaryFile = (content: Buffer): boolean => {
+  // Check for null bytes or high proportion of non-text characters
+  for (let i = 0; i < Math.min(512, content.length); i++) {
+    if (content[i] === 0) return true;
+  }
+  return false;
+};
+```
+
+## stdin Mode
+
+Process specific files from stdin:
+
+```bash
+# Process files from git diff
+git diff --name-only | repomix --stdin
+
+# Process files from find
+find src -name "*.ts" -type f | repomix --stdin
+
+# Process files from custom script
+my-file-selector.sh | repomix --stdin
+```
+
+**Implementation:** `src/core/file/fileStdin.ts`
+
+```typescript
+export const readFilePathsFromStdin = async (cwd: string) => {
+  const input = await readStdin();
+  const filePaths = input
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line.length > 0)
+    .map(line => path.resolve(cwd, line));
+  
+  return { filePaths };
+};
+```
+
+<Note>
+When using `--stdin`, don't specify directory arguments. File paths are read exclusively from stdin.
+</Note>
+
+## Empty Directories
+
+Include empty directories in the directory tree:
+
+```bash
+# Include empty directories
+repomix --include-empty-directories
+
+# Show full directory structure (all dirs, even without included files)
+repomix --include-full-directory-structure
+```
+
+**Implementation:** `src/core/file/fileSearch.ts:19`
+
+```typescript
+const findEmptyDirectories = async (
+  rootDir: string,
+  directories: string[],
+  ignorePatterns: string[],
+) => {
+  const emptyDirs: string[] = [];
+  
+  for (const dir of directories) {
+    const entries = await fs.readdir(fullPath);
+    const hasVisibleContents = entries.some(entry => !entry.startsWith('.'));
+    
+    if (!hasVisibleContents) {
+      const shouldIgnore = ignorePatterns.some(pattern => 
+        minimatch(dir, pattern) || minimatch(`${dir}/`, pattern)
+      );
+      
+      if (!shouldIgnore) {
+        emptyDirs.push(dir);
+      }
+    }
+  }
+  
+  return emptyDirs;
+};
+```
+
+## Advanced Examples
+
+### Frontend Project
+
+```json repomix.config.json
+{
+  "include": [
+    "src/**",
+    "public/**",
+    "*.config.js"
+  ],
+  "ignore": {
+    "customPatterns": [
+      "**/*.test.{ts,tsx}",
+      "**/*.spec.{ts,tsx}",
+      "**/__tests__/**",
+      "**/__mocks__/**",
+      "**/dist/**",
+      "**/build/**"
+    ]
+  }
+}
+```
+
+### Backend Project
+
+```json repomix.config.json
+{
+  "include": [
+    "src/**",
+    "config/**",
+    "migrations/**"
+  ],
+  "ignore": {
+    "customPatterns": [
+      "**/*.test.ts",
+      "**/test/**",
+      "**/.env*",
+      "**/uploads/**",
+      "**/logs/**"
+    ]
+  }
+}
+```
+
+### Monorepo
+
+```json repomix.config.json
+{
+  "include": [
+    "packages/*/src/**",
+    "packages/*/lib/**",
+    "shared/**"
+  ],
+  "ignore": {
+    "customPatterns": [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/*.test.ts",
+      "packages/legacy/**"
+    ]
+  }
+}
+```
+
+### Documentation Only
+
+```bash
+# Include only markdown files
+repomix --include "**/*.md" --include "**/*.mdx"
+
+# Or with config
+```
+
+```json repomix.config.json
+{
+  "include": [
+    "**/*.md",
+    "**/*.mdx",
+    "docs/**"
+  ],
+  "ignore": {
+    "useDefaultPatterns": false,
+    "customPatterns": [
+      "node_modules/**",
+      ".git/**"
+    ]
+  }
+}
+```
+
+## Debugging File Selection
+
+Use trace logging to debug pattern matching:
+
+```bash
+# Enable trace logging
+export REPOMIX_LOG_LEVEL=trace
+repomix
+
+# View matched patterns
+repomix 2>&1 | grep "Ignore patterns:"
+repomix 2>&1 | grep "Include patterns:"
+```
+
+**Log output:**
+```
+Ignore patterns: ['.git/**', 'node_modules/**', '**/*.log', ...]
+Include patterns: ['src/**', 'lib/**']
+Filtered 156 files
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Security" icon="shield" href="/concepts/security">
+    Learn about security checks and sensitive data detection
+  </Card>
+  <Card title="Configuration" icon="gear" href="/configuration/config-file">
+    Configure file selection in repomix.config.json
+  </Card>
+  <Card title="CLI Reference" icon="terminal" href="/cli-reference">
+    Complete list of file selection options
+  </Card>
+  <Card title="Output Formats" icon="file-code" href="/concepts/output-formats">
+    Choose the right output format for your needs
+  </Card>
+</CardGroup>

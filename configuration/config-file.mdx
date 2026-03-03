@@ -1,0 +1,490 @@
+---
+title: Configuration File
+description: Complete reference for repomix.config.json and TypeScript/JavaScript configuration files
+---
+
+Repomix supports multiple configuration file formats with full type safety in TypeScript.
+
+## Supported File Formats
+
+Repomix searches for config files in this priority order:
+
+| Format | File Name | Use Case |
+|--------|-----------|----------|
+| TypeScript | `repomix.config.ts` | Type-safe config with IDE autocomplete |
+| TypeScript (ESM) | `repomix.config.mts` | ES modules TypeScript projects |
+| TypeScript (CJS) | `repomix.config.cts` | CommonJS TypeScript projects |
+| JavaScript | `repomix.config.js` | JavaScript projects |
+| JavaScript (ESM) | `repomix.config.mjs` | ES modules JavaScript projects |
+| JavaScript (CJS) | `repomix.config.cjs` | CommonJS JavaScript projects |
+| JSON5 | `repomix.config.json5` | JSON with comments and trailing commas |
+| JSONC | `repomix.config.jsonc` | JSON with comments |
+| JSON | `repomix.config.json` | Standard JSON |
+
+## TypeScript Configuration
+
+### Using defineConfig
+
+The `defineConfig` helper provides full TypeScript type safety and IDE autocomplete:
+
+```typescript repomix.config.ts
+import { defineConfig } from 'repomix';
+
+export default defineConfig({
+  output: {
+    filePath: 'output.xml',
+    style: 'xml',
+    removeComments: true,
+    showLineNumbers: true,
+  },
+  ignore: {
+    useGitignore: true,
+    useDefaultPatterns: true,
+    customPatterns: [
+      '**/node_modules/**',
+      '**/dist/**',
+    ],
+  },
+});
+```
+
+### Advanced TypeScript Example
+
+```typescript repomix.config.ts
+import { defineConfig } from 'repomix';
+
+// Dynamic configuration based on environment
+const isProduction = process.env.NODE_ENV === 'production';
+
+export default defineConfig({
+  input: {
+    maxFileSize: 50 * 1024 * 1024, // 50MB
+  },
+  output: {
+    filePath: isProduction ? 'dist/output.xml' : 'dev-output.xml',
+    style: 'xml',
+    removeComments: isProduction,
+    removeEmptyLines: isProduction,
+    showLineNumbers: !isProduction,
+    headerText: `Generated on ${new Date().toISOString()}`,
+    fileSummary: true,
+    directoryStructure: true,
+    topFilesLength: 10,
+    git: {
+      sortByChanges: true,
+      sortByChangesMaxCommits: 100,
+      includeDiffs: false,
+      includeLogs: true,
+      includeLogsCount: 50,
+    },
+  },
+  include: [
+    'src/**/*.ts',
+    'lib/**/*.ts',
+  ],
+  ignore: {
+    useGitignore: true,
+    useDefaultPatterns: true,
+    customPatterns: [
+      '**/__tests__/**',
+      '**/*.test.ts',
+      '**/*.spec.ts',
+      '**/coverage/**',
+    ],
+  },
+  security: {
+    enableSecurityCheck: true,
+  },
+  tokenCount: {
+    encoding: 'o200k_base',
+  },
+});
+```
+
+## JavaScript Configuration
+
+### ES Modules (.mjs)
+
+```javascript repomix.config.mjs
+export default {
+  output: {
+    filePath: 'esm-output.xml',
+    style: 'xml',
+    removeComments: true,
+  },
+  ignore: {
+    customPatterns: [
+      '**/node_modules/**',
+      '**/dist/**',
+    ],
+  },
+};
+```
+
+### CommonJS (.cjs)
+
+```javascript repomix.config.cjs
+module.exports = {
+  output: {
+    filePath: 'cjs-output.xml',
+    style: 'xml',
+    removeComments: true,
+  },
+  ignore: {
+    customPatterns: [
+      '**/node_modules/**',
+      '**/dist/**',
+    ],
+  },
+};
+```
+
+## JSON Configuration
+
+### Standard JSON
+
+```json repomix.config.json
+{
+  "$schema": "https://repomix.com/schemas/latest/schema.json",
+  "input": {
+    "maxFileSize": 52428800
+  },
+  "output": {
+    "filePath": "repomix-output.xml",
+    "style": "xml",
+    "removeComments": false,
+    "showLineNumbers": false,
+    "fileSummary": true,
+    "directoryStructure": true,
+    "topFilesLength": 5
+  },
+  "ignore": {
+    "useGitignore": true,
+    "useDefaultPatterns": true,
+    "customPatterns": []
+  },
+  "security": {
+    "enableSecurityCheck": true
+  },
+  "tokenCount": {
+    "encoding": "o200k_base"
+  }
+}
+```
+
+### JSON5 (with comments)
+
+```json5 repomix.config.json5
+{
+  // Schema validation
+  $schema: 'https://repomix.com/schemas/latest/schema.json',
+  
+  output: {
+    filePath: 'output.xml',
+    style: 'xml',
+    
+    // Remove comments for cleaner output
+    removeComments: true,
+    removeEmptyLines: true,
+  },
+  
+  ignore: {
+    useGitignore: true,
+    useDefaultPatterns: true,
+    
+    // Custom patterns
+    customPatterns: [
+      '**/*.test.ts',
+      '**/*.spec.ts',
+    ],
+  },
+}
+```
+
+## Complete Configuration Schema
+
+### Input Options
+
+<ParamField path="input.maxFileSize" type="number" default="52428800">
+  Maximum file size in bytes. Files larger than this will be skipped.
+  
+  Default: 50MB (52,428,800 bytes)
+</ParamField>
+
+### Output Options
+
+See [Output Options](/configuration/output-options) for complete documentation.
+
+<ParamField path="output.filePath" type="string" default="repomix-output.xml">
+  Output file path. Extension auto-adjusts based on `style` if not explicitly set.
+</ParamField>
+
+<ParamField path="output.style" type="'xml' | 'markdown' | 'json' | 'plain'" default="xml">
+  Output format style
+</ParamField>
+
+<ParamField path="output.parsableStyle" type="boolean" default="false">
+  Use parsable output format without ANSI colors
+</ParamField>
+
+<ParamField path="output.headerText" type="string" optional>
+  Custom header text to include at the top of output
+</ParamField>
+
+<ParamField path="output.instructionFilePath" type="string" optional>
+  Path to instruction file to include in output
+</ParamField>
+
+<ParamField path="output.fileSummary" type="boolean" default="true">
+  Include file summary section
+</ParamField>
+
+<ParamField path="output.directoryStructure" type="boolean" default="true">
+  Include directory tree structure
+</ParamField>
+
+<ParamField path="output.files" type="boolean" default="true">
+  Include file contents
+</ParamField>
+
+<ParamField path="output.removeComments" type="boolean" default="false">
+  Remove code comments from output
+</ParamField>
+
+<ParamField path="output.removeEmptyLines" type="boolean" default="false">
+  Remove empty lines from output
+</ParamField>
+
+<ParamField path="output.compress" type="boolean" default="false">
+  Compress output using gzip
+</ParamField>
+
+<ParamField path="output.topFilesLength" type="number" default="5">
+  Number of top files to show in summary
+</ParamField>
+
+<ParamField path="output.showLineNumbers" type="boolean" default="false">
+  Show line numbers in file contents
+</ParamField>
+
+<ParamField path="output.truncateBase64" type="boolean" default="false">
+  Truncate base64 encoded content
+</ParamField>
+
+<ParamField path="output.copyToClipboard" type="boolean" default="false">
+  Copy output to clipboard
+</ParamField>
+
+<ParamField path="output.includeEmptyDirectories" type="boolean" optional>
+  Include empty directories in output
+</ParamField>
+
+<ParamField path="output.includeFullDirectoryStructure" type="boolean" default="false">
+  Include all directories in tree, not just those with included files
+</ParamField>
+
+<ParamField path="output.splitOutput" type="number" optional>
+  Split output into multiple files at specified byte size
+</ParamField>
+
+<ParamField path="output.tokenCountTree" type="boolean | number | string" default="false">
+  Show token count tree. Set to number for depth limit or string for encoding.
+</ParamField>
+
+### Git Options
+
+<ParamField path="output.git.sortByChanges" type="boolean" default="true">
+  Sort files by git changes (most changed first)
+</ParamField>
+
+<ParamField path="output.git.sortByChangesMaxCommits" type="number" default="100">
+  Maximum commits to analyze for change sorting
+</ParamField>
+
+<ParamField path="output.git.includeDiffs" type="boolean" default="false">
+  Include git diffs in output
+</ParamField>
+
+<ParamField path="output.git.includeLogs" type="boolean" default="false">
+  Include git logs in output
+</ParamField>
+
+<ParamField path="output.git.includeLogsCount" type="number" default="50">
+  Number of git log entries to include
+</ParamField>
+
+### Include Patterns
+
+See [File Patterns](/configuration/file-patterns) for details.
+
+<ParamField path="include" type="string[]" default="[]">
+  Glob patterns for files to include. Empty array means include all files.
+  
+  ```json
+  {
+    "include": [
+      "src/**/*.ts",
+      "lib/**/*.js"
+    ]
+  }
+  ```
+</ParamField>
+
+### Ignore Options
+
+See [File Patterns](/configuration/file-patterns) for details.
+
+<ParamField path="ignore.useGitignore" type="boolean" default="true">
+  Respect .gitignore files
+</ParamField>
+
+<ParamField path="ignore.useDotIgnore" type="boolean" default="true">
+  Respect .ignore files
+</ParamField>
+
+<ParamField path="ignore.useDefaultPatterns" type="boolean" default="true">
+  Use built-in default ignore patterns
+</ParamField>
+
+<ParamField path="ignore.customPatterns" type="string[]" default="[]">
+  Custom glob patterns to ignore
+  
+  ```json
+  {
+    "ignore": {
+      "customPatterns": [
+        "**/test/**",
+        "**/*.spec.ts"
+      ]
+    }
+  }
+  ```
+</ParamField>
+
+### Security Options
+
+<ParamField path="security.enableSecurityCheck" type="boolean" default="true">
+  Enable security checks to detect potentially sensitive files like `.env`, credentials, etc.
+</ParamField>
+
+### Token Count Options
+
+<ParamField path="tokenCount.encoding" type="string" default="o200k_base">
+  Tiktoken encoding for token counting.
+  
+  **Available encodings:**
+  - `o200k_base` - GPT-4o, GPT-4o mini (default)
+  - `cl100k_base` - GPT-4, GPT-3.5-turbo
+  - `p50k_base` - GPT-3, Codex
+  - `r50k_base` - GPT-3 davinci
+</ParamField>
+
+## Using Config with CLI
+
+### Specify Custom Config File
+
+```bash
+repomix --config custom.config.json
+```
+
+### CLI Options Override Config File
+
+```bash
+# Config file sets style: "xml", this overrides to markdown
+repomix --style markdown
+```
+
+### Global Config
+
+Create a global config for default settings:
+
+```bash
+# Initialize global config
+repomix --init --global
+```
+
+Global config location:
+- **macOS/Linux**: `~/.config/repomix/repomix.config.json`
+- **Windows**: `%APPDATA%\repomix\repomix.config.json`
+
+## Schema Validation
+
+Add JSON schema for autocomplete and validation in editors:
+
+```json repomix.config.json
+{
+  "$schema": "https://repomix.com/schemas/latest/schema.json",
+  "output": {
+    "style": "xml"
+  }
+}
+```
+
+## Examples
+
+### Minimal Configuration
+
+```json
+{
+  "output": {
+    "style": "markdown"
+  }
+}
+```
+
+### AI-Optimized Configuration
+
+```json
+{
+  "output": {
+    "style": "markdown",
+    "removeComments": true,
+    "removeEmptyLines": true,
+    "showLineNumbers": true,
+    "topFilesLength": 10
+  },
+  "ignore": {
+    "customPatterns": [
+      "**/test/**",
+      "**/*.test.*",
+      "**/*.spec.*",
+      "**/dist/**",
+      "**/coverage/**"
+    ]
+  },
+  "tokenCount": {
+    "encoding": "o200k_base"
+  }
+}
+```
+
+### Documentation Generation
+
+```json
+{
+  "include": [
+    "src/**/*.ts",
+    "README.md",
+    "docs/**/*.md"
+  ],
+  "output": {
+    "style": "plain",
+    "filePath": "docs-output.txt",
+    "removeComments": false,
+    "directoryStructure": true,
+    "fileSummary": true
+  }
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="File Patterns" icon="filter" href="/configuration/file-patterns">
+    Learn about include/exclude patterns
+  </Card>
+  
+  <Card title="Output Options" icon="file-export" href="/configuration/output-options">
+    Customize output format and content
+  </Card>
+</CardGroup>

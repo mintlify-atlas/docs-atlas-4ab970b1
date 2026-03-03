@@ -1,0 +1,421 @@
+---
+title: Compression
+description: Reduce token count with Tree-sitter code compression while preserving structure
+---
+
+The `--compress` option uses [Tree-sitter](https://github.com/tree-sitter/tree-sitter) to perform intelligent code extraction, focusing on essential function and class signatures while removing implementation details.
+
+## How compression works
+
+Tree-sitter compression extracts:
+- Import statements
+- Class and interface declarations  
+- Function and method signatures
+- Type definitions
+- Comments (unless `--remove-comments` is used)
+
+It removes:
+- Function implementation bodies
+- Variable initialization details
+- Most code logic
+
+<Tip>
+Compression typically reduces token count by **~70%** while preserving the semantic structure AI needs to understand your codebase.
+</Tip>
+
+## Basic usage
+
+```bash
+repomix --compress
+```
+
+That's it! Repomix automatically detects file languages and applies the appropriate Tree-sitter parser.
+
+## Compression examples
+
+### TypeScript compression
+
+**Original code:**
+
+```typescript
+import { ShoppingItem } from './shopping-item';
+
+/**
+ * Calculate the total price of shopping items
+ */
+const calculateTotal = (
+  items: ShoppingItem[]
+) => {
+  let total = 0;
+  for (const item of items) {
+    total += item.price * item.quantity;
+  }
+  return total;
+}
+
+// Shopping item interface
+interface Item {
+  name: string;
+  price: number;
+  quantity: number;
+}
+```
+
+**Compressed output:**
+
+```typescript
+import { ShoppingItem } from './shopping-item';
+⋮----
+/**
+ * Calculate the total price of shopping items
+ */
+const calculateTotal = (
+  items: ShoppingItem[]
+) => {
+⋮----
+// Shopping item interface
+interface Item {
+  name: string;
+  price: number;
+  quantity: number;
+}
+```
+
+<Note>
+The `⋮----` marker indicates compressed/removed code. AI models can still understand the structure and purpose of the code.
+</Note>
+
+### JavaScript compression
+
+**Original code:**
+
+```javascript
+export class UserManager {
+  constructor(database) {
+    this.db = database;
+    this.cache = new Map();
+  }
+
+  async getUser(id) {
+    if (this.cache.has(id)) {
+      return this.cache.get(id);
+    }
+    
+    const user = await this.db.query('SELECT * FROM users WHERE id = ?', [id]);
+    this.cache.set(id, user);
+    return user;
+  }
+
+  async updateUser(id, data) {
+    await this.db.query('UPDATE users SET ? WHERE id = ?', [data, id]);
+    this.cache.delete(id);
+  }
+}
+```
+
+**Compressed output:**
+
+```javascript
+export class UserManager {
+  constructor(database) {
+⋮----
+  async getUser(id) {
+⋮----
+  async updateUser(id, data) {
+⋮----
+}
+```
+
+### Python compression
+
+**Original code:**
+
+```python
+class DataProcessor:
+    def __init__(self, config: dict):
+        self.config = config
+        self.cache = {}
+    
+    def process_data(self, data: list) -> list:
+        """Process a list of data items."""
+        result = []
+        for item in data:
+            if item in self.cache:
+                result.append(self.cache[item])
+            else:
+                processed = self._process_item(item)
+                self.cache[item] = processed
+                result.append(processed)
+        return result
+    
+    def _process_item(self, item: any) -> any:
+        """Process a single item."""
+        # Complex processing logic here
+        return item.upper() if isinstance(item, str) else item
+```
+
+**Compressed output:**
+
+```python
+class DataProcessor:
+    def __init__(self, config: dict):
+⋮----
+    def process_data(self, data: list) -> list:
+        """Process a list of data items."""
+⋮----
+    def _process_item(self, item: any) -> any:
+        """Process a single item."""
+⋮----
+```
+
+## When to use compression
+
+<Tabs>
+  <Tab title="Large codebases">
+    **Problem:** Your repository has 100+ files and exceeds AI token limits.
+    
+    **Solution:**
+    ```bash
+    repomix --compress
+    ```
+    
+    Reduces token count while preserving structure for AI understanding.
+  </Tab>
+  
+  <Tab title="Architecture review">
+    **Problem:** You want AI to review architecture, not implementation details.
+    
+    **Solution:**
+    ```bash
+    repomix --compress --remove-comments
+    ```
+    
+    Focuses on code structure, removing implementation and comments.
+  </Tab>
+  
+  <Tab title="API exploration">
+    **Problem:** Learning what APIs a library exposes.
+    
+    **Solution:**
+    ```bash
+    repomix --remote lodash/lodash --compress --include "src/**"
+    ```
+    
+    Shows function signatures without implementation details.
+  </Tab>
+  
+  <Tab title="Quick overview">
+    **Problem:** Need a fast understanding of project structure.
+    
+    **Solution:**
+    ```bash
+    repomix --compress --style markdown
+    ```
+    
+    Generates a compressed, readable overview in Markdown.
+  </Tab>
+</Tabs>
+
+## Combine with other options
+
+Compression works well with other Repomix features:
+
+<CodeGroup>
+
+```bash Remove comments too
+repomix --compress --remove-comments
+```
+
+```bash Remove empty lines
+repomix --compress --remove-empty-lines
+```
+
+```bash Maximum reduction
+repomix --compress --remove-comments --remove-empty-lines
+```
+
+```bash Specific files only
+repomix --compress --include "src/**/*.ts"
+```
+
+```bash Remote repository
+repomix --remote yamadashy/repomix --compress
+```
+
+</CodeGroup>
+
+## Supported languages
+
+Tree-sitter compression works with:
+
+- **JavaScript** / **TypeScript**
+- **Python**
+- **Java**
+- **C** / **C++** / **C#**
+- **Go**
+- **Rust**
+- **Ruby**
+- **PHP**
+- And more languages supported by Tree-sitter
+
+<Note>
+Files in unsupported languages are included without compression. This ensures your output always contains all selected files.
+</Note>
+
+## Measure compression impact
+
+Before compression:
+
+```bash
+repomix --verbose
+```
+
+Output:
+```
+📊 Total Files: 120
+📊 Total Characters: 450,000
+📊 Total Tokens: 112,500
+```
+
+With compression:
+
+```bash
+repomix --compress --verbose
+```
+
+Output:
+```
+📊 Total Files: 120
+📊 Total Characters: 135,000
+📊 Total Tokens: 33,750
+```
+
+<Tip>
+**~70% token reduction** in this example! This can mean the difference between exceeding AI context limits or staying well within them.
+</Tip>
+
+## Real-world examples
+
+<Tabs>
+  <Tab title="Next.js app">
+    ```bash
+    # Compress React components to understand structure
+    repomix src --compress --include "**/*.{ts,tsx}" --ignore "**/*.test.*"
+    ```
+    
+    Great for understanding component architecture without implementation details.
+  </Tab>
+  
+  <Tab title="Express API">
+    ```bash
+    # Show API routes and middleware without implementation
+    repomix --compress --include "routes/**,middleware/**"
+    ```
+    
+    Perfect for API documentation generation or route analysis.
+  </Tab>
+  
+  <Tab title="Python data pipeline">
+    ```bash
+    # Compress data processing classes
+    repomix --compress --include "**/*.py" --ignore "tests/**"
+    ```
+    
+    Understand pipeline architecture and data flow.
+  </Tab>
+  
+  <Tab title="Library analysis">
+    ```bash
+    # Analyze library API without implementation
+    repomix --remote axios/axios --compress --include "lib/**"
+    ```
+    
+    Quick way to understand a library's public API.
+  </Tab>
+</Tabs>
+
+## Compare compressed vs uncompressed
+
+To decide if compression is right for your use case:
+
+<Steps>
+  <Step title="Generate uncompressed output">
+    ```bash
+    repomix --output full.xml --verbose
+    ```
+    
+    Note the token count.
+  </Step>
+  
+  <Step title="Generate compressed output">
+    ```bash
+    repomix --compress --output compressed.xml --verbose
+    ```
+    
+    Note the token count.
+  </Step>
+  
+  <Step title="Compare sizes">
+    ```bash
+    ls -lh full.xml compressed.xml
+    ```
+    
+    See the file size difference.
+  </Step>
+  
+  <Step title="Test with AI">
+    Upload both to your AI assistant and ask the same question. See if the compressed version provides sufficient context.
+  </Step>
+</Steps>
+
+## When NOT to use compression
+
+<Warning>
+Don't use compression when:
+
+- **Implementation details matter** (bug fixing, code review of specific logic)
+- **You need exact code** (code refactoring, migration)
+- **Small codebases** (< 50 files, compression overhead not worth it)
+- **Binary or data files** (images, CSVs, JSON - they won't compress well)
+</Warning>
+
+For these cases, use other token reduction strategies:
+
+```bash
+# Instead of compression, be selective with files
+repomix --include "src/buggy-module/**"
+
+# Or remove comments and empty lines
+repomix --remove-comments --remove-empty-lines
+```
+
+## Experimental feature notice
+
+<Note>
+Compression is an **experimental feature** that we're actively improving based on user feedback and real-world usage.
+
+If you encounter issues with compressed output:
+1. Try without compression first
+2. Report issues on [GitHub](https://github.com/yamadashy/repomix/issues)
+3. Use `--verbose` to see which files are being compressed
+</Note>
+
+## What's next?
+
+<CardGroup cols={2}>
+  <Card title="Token optimization" icon="chart-line" href="/guides/token-optimization">
+    More strategies for reducing token usage
+  </Card>
+  
+  <Card title="Splitting output" icon="scissors" href="/guides/splitting-output">
+    Split large outputs into multiple files
+  </Card>
+  
+  <Card title="Remote repositories" icon="cloud" href="/guides/remote-repositories">
+    Compress remote codebases without cloning
+  </Card>
+  
+  <Card title="Output formats" icon="file-code" href="/concepts/output-formats">
+    Choose the best format for compressed output
+  </Card>
+</CardGroup>

@@ -1,0 +1,252 @@
+---
+title: Installation
+description: Install Repomix using npx, npm, yarn, bun, Homebrew, or Docker
+---
+
+## Quick install
+
+Choose your preferred installation method based on your workflow:
+
+<CodeGroup>
+
+```bash npx (no install)
+npx repomix@latest
+```
+
+```bash npm
+npm install -g repomix
+```
+
+```bash yarn
+yarn global add repomix
+```
+
+```bash bun
+bun add -g repomix
+```
+
+```bash Homebrew
+brew install repomix
+```
+
+```bash Docker
+docker pull ghcr.io/yamadashy/repomix
+```
+
+</CodeGroup>
+
+<Tip>
+If you're trying Repomix for the first time or want to always use the latest version, use `npx repomix@latest`. No installation required.
+</Tip>
+
+## Installation methods
+
+### npx (recommended for quick usage)
+
+The fastest way to try Repomix without installing anything:
+
+```bash
+npx repomix@latest
+```
+
+**Advantages:**
+- No installation required
+- Always uses the latest version
+- Perfect for one-time usage or trying out Repomix
+- Works in any directory
+
+**Usage:**
+```bash
+# Pack current directory
+npx repomix@latest
+
+# Pack specific directory
+npx repomix@latest path/to/project
+
+# Use with options
+npx repomix@latest --style markdown --output docs.md
+```
+
+### npm (recommended for regular use)
+
+Install globally for convenient repeated use:
+
+```bash
+npm install -g repomix
+```
+
+**Advantages:**
+- Faster than npx after initial install
+- Works offline after installation
+- Simple command: just `repomix`
+
+**Usage:**
+```bash
+# Pack current directory
+repomix
+
+# Pack specific directory
+repomix path/to/project
+```
+
+**Update Repomix:**
+```bash
+npm update -g repomix
+```
+
+### yarn
+
+Install using yarn package manager:
+
+```bash
+yarn global add repomix
+```
+
+**Usage:**
+```bash
+repomix
+```
+
+**Update Repomix:**
+```bash
+yarn global upgrade repomix
+```
+
+### bun
+
+Install using bun for faster performance:
+
+```bash
+bun add -g repomix
+```
+
+**Usage:**
+```bash
+repomix
+```
+
+**Update Repomix:**
+```bash
+bun update -g repomix
+```
+
+### Homebrew (macOS/Linux)
+
+Install using Homebrew package manager:
+
+```bash
+brew install repomix
+```
+
+**Advantages:**
+- System-wide installation managed by Homebrew
+- Easy updates alongside other Homebrew packages
+- Works on macOS and Linux
+
+**Usage:**
+```bash
+repomix
+```
+
+**Update Repomix:**
+```bash
+brew upgrade repomix
+```
+
+### Docker
+
+Run Repomix in a containerized environment:
+
+```bash
+docker pull ghcr.io/yamadashy/repomix
+```
+
+**Advantages:**
+- Isolated environment
+- No Node.js installation required
+- Consistent behavior across systems
+- Perfect for CI/CD pipelines
+
+**Usage:**
+
+<Steps>
+  <Step title="Pull the Docker image">
+    ```bash
+    docker pull ghcr.io/yamadashy/repomix
+    ```
+  </Step>
+  
+  <Step title="Run Repomix on current directory">
+    ```bash
+    docker run -v .:/app -it --rm ghcr.io/yamadashy/repomix
+    ```
+    
+    This mounts your current directory to `/app` in the container.
+  </Step>
+  
+  <Step title="Pack specific directory">
+    ```bash
+    docker run -v .:/app -it --rm ghcr.io/yamadashy/repomix path/to/directory
+    ```
+  </Step>
+</Steps>
+
+**Advanced Docker usage:**
+
+```bash
+# Process a remote repository and save to output directory
+docker run -v ./output:/app -it --rm ghcr.io/yamadashy/repomix \
+  --remote https://github.com/yamadashy/repomix
+
+# Use custom configuration
+docker run -v .:/app -it --rm ghcr.io/yamadashy/repomix \
+  --config /app/repomix.config.json
+
+# Generate compressed output
+docker run -v .:/app -it --rm ghcr.io/yamadashy/repomix \
+  --compress --style markdown
+```
+
+## System requirements
+
+<Note>
+**Node.js version:** Repomix requires Node.js 20.0.0 or higher.
+
+Check your Node.js version:
+```bash
+node --version
+```
+
+If you need to upgrade, visit [nodejs.org](https://nodejs.org/).
+</Note>
+
+**Supported platforms:**
+- macOS (Intel and Apple Silicon)
+- Linux (x64, ARM)
+- Windows (WSL recommended)
+
+## Verify installation
+
+After installing, verify Repomix is working:
+
+```bash
+repomix --version
+```
+
+You should see output like:
+
+```
+📦 Repomix v1.12.0
+```
+
+## What's next?
+
+<CardGroup cols={2}>
+  <Card title="Quick start" icon="rocket" href="/quickstart">
+    Pack your first repository in minutes
+  </Card>
+  
+  <Card title="Configuration" icon="gear" href="/configuration">
+    Customize Repomix for your workflow
+  </Card>
+</CardGroup>

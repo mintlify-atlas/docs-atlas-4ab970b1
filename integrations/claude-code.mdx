@@ -1,0 +1,131 @@
+---
+title: Claude Code Plugins
+description: Install and use official Repomix plugins for Claude Code
+---
+
+# Claude Code Plugins
+
+Repomix provides official plugins for [Claude Code](https://docs.anthropic.com/en/docs/claude-code/overview) that integrate seamlessly with the AI-powered development environment.
+
+## Installation
+
+<Steps>
+
+<Step title="Add the Repomix plugin marketplace">
+
+```text
+/plugin marketplace add yamadashy/repomix
+```
+
+</Step>
+
+<Step title="Install plugins">
+
+```text
+# Install MCP server plugin (recommended foundation)
+/plugin install repomix-mcp@repomix
+
+# Install commands plugin (extends functionality)
+/plugin install repomix-commands@repomix
+
+# Install repository explorer plugin (AI-powered analysis)
+/plugin install repomix-explorer@repomix
+```
+
+</Step>
+
+</Steps>
+
+<Note>
+The `repomix-mcp` plugin is recommended as a foundation. The `repomix-commands` plugin provides convenient slash commands, while `repomix-explorer` adds AI-powered analysis capabilities. While you can install them independently, using all three provides the most comprehensive experience.
+</Note>
+
+### Alternative: Interactive Plugin Installer
+
+You can also use the interactive plugin installer:
+
+```text
+/plugin
+```
+
+This will open an interactive interface where you can browse and install available plugins.
+
+## Available Plugins
+
+### repomix-mcp (MCP Server Plugin)
+
+Foundation plugin that provides AI-powered codebase analysis through MCP server integration.
+
+**Features:**
+
+- Pack local and remote repositories
+- Search through packed outputs
+- Read files with built-in security scanning (Secretlint)
+- Automatic Tree-sitter compression (~70% token reduction)
+
+### repomix-commands (Slash Commands Plugin)
+
+Provides convenient slash commands for quick operations with natural language support.
+
+**Available Commands:**
+
+- `/repomix-commands:pack-local` - Pack local codebase with various options
+- `/repomix-commands:pack-remote` - Pack and analyze remote GitHub repositories
+
+**Example usage:**
+
+```text
+/repomix-commands:pack-local
+Pack this project as markdown with compression
+
+/repomix-commands:pack-remote yamadashy/repomix
+Pack only TypeScript files from the yamadashy/repomix repository
+```
+
+### repomix-explorer (AI Analysis Agent Plugin)
+
+AI-powered repository analysis agent that intelligently explores codebases using Repomix CLI.
+
+**Features:**
+
+- Natural language codebase exploration and analysis
+- Intelligent pattern discovery and code structure understanding
+- Incremental analysis using grep and targeted file reading
+- Automatic context management for large repositories
+
+**Available Commands:**
+
+- `/repomix-explorer:explore-local` - Analyze local codebase with AI assistance
+- `/repomix-explorer:explore-remote` - Analyze remote GitHub repositories with AI assistance
+
+**Example usage:**
+
+```text
+/repomix-explorer:explore-local ./src
+Find all authentication-related code
+
+/repomix-explorer:explore-remote facebook/react
+Show me the main component architecture
+```
+
+The agent automatically:
+
+1. Runs `npx repomix@latest` to pack the repository
+2. Uses Grep and Read tools to efficiently search the output
+3. Provides comprehensive analysis without consuming excessive context
+
+## Benefits
+
+- **Seamless Integration**: Claude can directly analyze codebases without manual preparation
+- **Natural Language**: Use conversational commands instead of remembering CLI syntax
+- **Always Latest**: Automatically uses `npx repomix@latest` for up-to-date features
+- **Security Built-in**: Automatic Secretlint scanning prevents sensitive data exposure
+- **Token Optimization**: Tree-sitter compression for large codebases
+
+## Plugin Documentation
+
+For more details, see the plugin documentation in the `.claude/plugins/` directory of the [Repomix repository](https://github.com/yamadashy/repomix).
+
+## Alternative: MCP Server Configuration
+
+If you prefer to configure Repomix as an MCP server directly instead of using plugins, see the [MCP Server Integration](/integrations/mcp-server) guide.

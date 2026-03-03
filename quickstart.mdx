@@ -1,80 +1,331 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quick start
+description: Pack your first repository and use it with AI assistants in minutes
 ---
 
-## Get started in three steps
+This guide will help you pack your first repository with Repomix and use the output with AI assistants.
 
-Get your documentation site running locally and make your first customization.
+## Pack your first repository
 
-### Step 1: Set up your local environment
-
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
+<Steps>
+  <Step title="Navigate to your project">
+    Open a terminal and navigate to your project directory:
     
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
+    ```bash
+    cd /path/to/your/project
+    ```
+  </Step>
+  
+  <Step title="Run Repomix">
+    Run Repomix to pack your entire repository:
     
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
+    ```bash
+    npx repomix@latest
+    ```
     
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+    <Tip>
+    Using `npx repomix@latest` ensures you always use the most recent version without installing anything.
+    </Tip>
+    
+    You'll see output like this:
+    
+    ```
+    📦 Repomix v1.12.0
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+    ✔ Repository files collected
+    ✔ Security check completed
+    ✔ File contents processed
+    ✔ Output file generated
+    
+    📊 Total Files: 42
+    📊 Total Characters: 125,430
+    📊 Total Tokens: 31,250
+    
+    ✅ Output file: repomix-output.xml
+    ```
+  </Step>
+  
+  <Step title="Find your output file">
+    Repomix creates a file called `repomix-output.xml` in your current directory. This file contains your entire codebase in an AI-friendly format.
+  </Step>
+</Steps>
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+## Use output with AI assistants
 
-### Step 3: Go live
+Now that you have your packed repository, here's how to use it with popular AI tools:
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+<Tabs>
+  <Tab title="Claude / ChatGPT">
+    <Steps>
+      <Step title="Open the AI chat interface">
+        Navigate to [Claude](https://claude.ai) or [ChatGPT](https://chat.openai.com).
+      </Step>
+      
+      <Step title="Attach the output file">
+        Click the attachment button (📎) and upload `repomix-output.xml`.
+      </Step>
+      
+      <Step title="Add your prompt">
+        Send a prompt along with the file:
+        
+        ```
+        This file contains all the files in the repository combined into one.
+        I want to refactor the code, so please review it first.
+        ```
+      </Step>
+      
+      <Step title="Get AI analysis">
+        The AI will analyze your codebase and provide insights, suggestions, or generate code based on your request.
+      </Step>
+    </Steps>
+  </Tab>
+  
+  <Tab title="Copy to clipboard">
+    <Steps>
+      <Step title="Run with --copy flag">
+        Generate output and copy to clipboard in one command:
+        
+        ```bash
+        npx repomix@latest --copy
+        ```
+      </Step>
+      
+      <Step title="Paste into AI chat">
+        Paste directly into any AI chat interface using Cmd+V (Mac) or Ctrl+V (Windows/Linux).
+      </Step>
+    </Steps>
+    
+    <Note>
+    The `--copy` flag automatically copies the output to your system clipboard after generation.
+    </Note>
+  </Tab>
+  
+  <Tab title="Command line">
+    <Steps>
+      <Step title="Output to stdout">
+        Generate output directly to stdout and pipe to another tool:
+        
+        ```bash
+        npx repomix@latest --stdout | llm "Please explain what this code does."
+        ```
+      </Step>
+      
+      <Step title="Use with other CLI tools">
+        Combine with tools like [simonw/llm](https://github.com/simonw/llm) for command-line AI workflows:
+        
+        ```bash
+        # Analyze architecture
+        npx repomix@latest --stdout | llm "Describe the overall architecture"
+        
+        # Generate documentation
+        npx repomix@latest --stdout | llm "Create a README.md" > README.md
+        
+        # Find security issues
+        npx repomix@latest --stdout | llm "Check for security vulnerabilities"
+        ```
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
 
-## Next steps
+## Example AI prompts
 
-Now that you have your docs running, explore these key features:
+Once you've shared your codebase with an AI assistant, try these prompts:
+
+### Code review
+
+```
+This file contains my entire codebase. Please review the overall structure 
+and suggest any improvements or refactoring opportunities, focusing on 
+maintainability and scalability.
+```
+
+### Generate documentation
+
+```
+Based on the codebase in this file, please generate a detailed README.md 
+that includes an overview of the project, its main features, setup 
+instructions, and usage examples.
+```
+
+### Create tests
+
+```
+Analyze the code in this file and suggest a comprehensive set of unit tests 
+for the main functions and classes. Include edge cases and potential error 
+scenarios.
+```
+
+### Assess code quality
+
+```
+Review the codebase for adherence to coding best practices and industry 
+standards. Identify areas where the code could be improved in terms of 
+readability, maintainability, and efficiency.
+```
+
+## Pack specific files or directories
+
+You don't always need to pack your entire repository. Here's how to be selective:
+
+### Pack a specific directory
+
+```bash
+npx repomix@latest src
+```
+
+### Pack multiple directories
+
+```bash
+npx repomix@latest src tests
+```
+
+### Include specific file patterns
+
+```bash
+npx repomix@latest --include "src/**/*.ts,**/*.md"
+```
+
+This includes only TypeScript files in `src/` and all Markdown files.
+
+### Exclude specific patterns
+
+```bash
+npx repomix@latest --ignore "**/*.test.ts,**/*.spec.ts"
+```
+
+This excludes all test files.
+
+## Choose an output format
+
+Repomix supports multiple output formats optimized for different use cases:
+
+<CodeGroup>
+
+```bash XML (default)
+npx repomix@latest
+# Creates: repomix-output.xml
+```
+
+```bash Markdown
+npx repomix@latest --style markdown
+# Creates: repomix-output.md
+```
+
+```bash JSON
+npx repomix@latest --style json
+# Creates: repomix-output.json
+```
+
+```bash Plain text
+npx repomix@latest --style plain
+# Creates: repomix-output.txt
+```
+
+</CodeGroup>
+
+<Tip>
+XML format is recommended for most AI tools as it provides better structure and context. Learn more about [why XML works well with AI](https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/use-xml-tags).
+</Tip>
+
+## Reduce token count
+
+If your repository is large, you might exceed AI token limits. Here are strategies to reduce token count:
+
+### Use compression
+
+```bash
+npx repomix@latest --compress
+```
+
+This uses Tree-sitter to extract only essential code structure (classes, functions, interfaces), reducing tokens by ~70% while preserving semantic meaning.
+
+### Remove comments
+
+```bash
+npx repomix@latest --remove-comments
+```
+
+### Remove empty lines
+
+```bash
+npx repomix@latest --remove-empty-lines
+```
+
+### Combine strategies
+
+```bash
+npx repomix@latest --compress --remove-comments --remove-empty-lines
+```
+
+### Check token counts
+
+```bash
+npx repomix@latest --token-count-tree
+```
+
+This shows a tree view with token counts per file/directory, helping you identify what to exclude:
+
+```
+🔢 Token Count Tree:
+────────────────────
+└── src/ (70,925 tokens)
+    ├── cli/ (12,714 tokens)
+    │   ├── actions/ (7,546 tokens)
+    │   └── reporters/ (990 tokens)
+    └── core/ (41,600 tokens)
+        ├── file/ (10,098 tokens)
+        └── output/ (5,808 tokens)
+```
+
+## Pack remote repositories
+
+You can pack any public GitHub repository without cloning it:
+
+```bash
+npx repomix@latest --remote https://github.com/yamadashy/repomix
+```
+
+**Shorthand format:**
+```bash
+npx repomix@latest --remote yamadashy/repomix
+```
+
+**Specific branch:**
+```bash
+npx repomix@latest --remote yamadashy/repomix --remote-branch main
+```
+
+**Using branch URL:**
+```bash
+npx repomix@latest --remote https://github.com/yamadashy/repomix/tree/main
+```
+
+<Tip>
+Packing remote repositories is perfect for:
+- Analyzing open-source libraries before using them
+- Learning from other projects
+- Using existing codebases as implementation references for AI
+</Tip>
+
+## What's next?
+
+Now that you've packed your first repository, explore more features:
 
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="Configuration" icon="gear" href="/configuration/overview">
+    Customize output format, file filtering, and more
+  </Card>
+  
+  <Card title="CLI reference" icon="terminal" href="/cli/overview">
+    Explore all available commands and options
+  </Card>
+  
+  <Card title="Output formats" icon="file-code" href="/concepts/output-formats">
+    Learn about XML, Markdown, JSON, and plain text formats
+  </Card>
+  
+  <Card title="Token optimization" icon="lightbulb" href="/guides/token-optimization">
+    Tips for optimizing token usage and AI interactions
+  </Card>
 </CardGroup>
-
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>

@@ -1,0 +1,487 @@
+---
+title: File Patterns
+description: Configure file inclusion and exclusion using glob patterns, .gitignore, and .repomixignore
+---
+
+Repomix uses glob patterns and ignore files to control which files are included in the output.
+
+## Include Patterns
+
+Include patterns specify which files to process. If no include patterns are specified, all files are included (subject to ignore rules).
+
+### Basic Include Patterns
+
+```json repomix.config.json
+{
+  "include": [
+    "src/**/*.ts",      // All TypeScript files in src/
+    "lib/**/*.js",      // All JavaScript files in lib/
+    "README.md",        // Specific file
+    "docs/**/*.md"      // All markdown in docs/
+  ]
+}
+```
+
+### Glob Pattern Syntax
+
+| Pattern | Description | Example |
+|---------|-------------|----------|
+| `*` | Match any characters except `/` | `*.ts` matches `file.ts` |
+| `**` | Match any characters including `/` | `**/*.ts` matches `src/utils/file.ts` |
+| `?` | Match single character | `file?.ts` matches `file1.ts` |
+| `[abc]` | Match characters in set | `file[123].ts` matches `file1.ts` |
+| `{a,b}` | Match alternatives | `*.{ts,js}` matches `file.ts` or `file.js` |
+| `!` | Negate pattern | `!*.test.ts` excludes test files |
+
+### Include Examples
+
+```json
+{
+  "include": [
+    // Include only TypeScript and JavaScript
+    "**/*.{ts,js,tsx,jsx}",
+    
+    // Include specific directories
+    "src/**/*",
+    "lib/**/*",
+    
+    // Include configuration files
+    "*.config.{js,ts,json}",
+    
+    // Include documentation
+    "README.md",
+    "docs/**/*.md"
+  ]
+}
+```
+
+## Ignore Configuration
+
+Repomix supports multiple ways to ignore files:
+
+1. **Default patterns** - Built-in patterns for common files
+2. **`.gitignore`** - Respect existing git ignore rules
+3. **`.repomixignore`** - Repomix-specific ignore file
+4. **`.ignore`** - Generic ignore file
+5. **Custom patterns** - Configured in `repomix.config.json`
+
+### Ignore Object Schema
+
+```json repomix.config.json
+{
+  "ignore": {
+    "useGitignore": true,
+    "useDotIgnore": true,
+    "useDefaultPatterns": true,
+    "customPatterns": [
+      "**/test/**",
+      "**/*.test.ts"
+    ]
+  }
+}
+```
+
+<ParamField path="ignore.useGitignore" type="boolean" default="true">
+  Respect `.gitignore` files in the repository
+</ParamField>
+
+<ParamField path="ignore.useDotIgnore" type="boolean" default="true">
+  Respect `.ignore` files (used by tools like ripgrep and fd)
+</ParamField>
+
+<ParamField path="ignore.useDefaultPatterns" type="boolean" default="true">
+  Use Repomix's built-in default ignore patterns
+</ParamField>
+
+<ParamField path="ignore.customPatterns" type="string[]" default="[]">
+  Custom glob patterns to ignore
+</ParamField>
+
+## Default Ignore Patterns
+
+When `useDefaultPatterns` is enabled, Repomix ignores common files:
+
+### Version Control
+```
+.git/**
+.hg/**
+.svn/**
+```
+
+### Dependencies
+```
+**/node_modules/**
+**/bower_components/**
+vendor/**
+**/.bundle/**
+target/**
+```
+
+### Build Output
+```
+dist/**
+build/**
+out/**
+coverage/**
+```
+
+### Logs and Temporary Files
+```
+logs/**
+**/*.log
+tmp/**
+temp/**
+*.cache
+```
+
+### Lock Files
+```
+**/package-lock.json
+**/yarn.lock
+**/pnpm-lock.yaml
+**/bun.lockb
+**/Cargo.lock
+**/Gemfile.lock
+**/composer.lock
+**/poetry.lock
+**/go.sum
+```
+
+### IDE and OS Files
+```
+.idea/**
+.vscode/**
+**/.DS_Store
+**/Thumbs.db
+```
+
+### Repomix Output
+```
+**/repomix-output.*
+```
+
+View the complete list in the [source code](https://github.com/yamadashy/repomix/blob/main/src/config/defaultIgnore.ts).
+
+## .repomixignore File
+
+Create a `.repomixignore` file in your project root for Repomix-specific ignore rules:
+
+```plaintext .repomixignore
+# Build outputs
+**/build/**
+**/dist/**
+
+# Test files
+**/__tests__/**
+**/*.test.ts
+**/*.spec.ts
+
+# Documentation
+docs/generated/**
+
+# Large data files
+**/*.csv
+**/*.json
+```
+
+### .repomixignore Syntax
+
+- One pattern per line
+- Lines starting with `#` are comments
+- Blank lines are ignored
+- Supports standard glob patterns
+- Follows same syntax as `.gitignore`
+
+## Nested Ignore Files
+
+Ignore files in subdirectories override parent patterns:
+
+```
+project/
+├── .repomixignore          # Root ignore patterns
+├── src/
+│   └── .repomixignore      # Overrides for src/ directory
+└── tests/
+    └── .repomixignore      # Overrides for tests/ directory
+```
+
+Patterns in deeper directories have higher priority, following the behavior of ripgrep and fd.
+
+## Custom Ignore Patterns
+
+Add custom patterns directly in the config file:
+
+```json repomix.config.json
+{
+  "ignore": {
+    "useGitignore": true,
+    "useDefaultPatterns": true,
+    "customPatterns": [
+      // Ignore test files
+      "**/__tests__/**",
+      "**/*.test.ts",
+      "**/*.spec.ts",
+      
+      // Ignore generated files
+      "**/generated/**",
+      "**/*.generated.ts",
+      
+      // Ignore large assets
+      "**/*.mp4",
+      "**/*.zip",
+      "**/*.tar.gz"
+    ]
+  }
+}
+```
+
+## Combining Include and Ignore
+
+Include patterns are applied first, then ignore patterns filter the results:
+
+```json
+{
+  "include": [
+    "src/**/*.ts"  // Start with all TypeScript in src/
+  ],
+  "ignore": {
+    "customPatterns": [
+      "**/*.test.ts"  // But exclude test files
+    ]
+  }
+}
+```
+
+Result: All TypeScript files in `src/` except test files.
+
+## Special Characters in Paths
+
+Paths with special characters like parentheses are automatically escaped:
+
+```json
+{
+  "include": [
+    "src/(special)/**/*"  // Automatically handled
+  ]
+}
+```
+
+Repomix automatically escapes patterns for paths containing:
+- Parentheses: `(`, `)`
+- Brackets: `[`, `]`
+- Backslashes: `\`
+
+## CLI Override
+
+Override ignore settings from the command line:
+
+```bash
+# Disable gitignore
+repomix --no-gitignore
+
+# Disable default patterns
+repomix --no-default-patterns
+
+# Add custom ignore patterns
+repomix --ignore "**/*.test.ts" --ignore "**/*.spec.ts"
+
+# Specify files to include
+repomix --include "src/**/*.ts" --include "lib/**/*.js"
+```
+
+## Advanced Patterns
+
+### Exclude by File Size
+
+Files larger than `maxFileSize` are automatically excluded:
+
+```json
+{
+  "input": {
+    "maxFileSize": 10485760  // 10MB in bytes
+  }
+}
+```
+
+### Include Only Specific Extensions
+
+```json
+{
+  "include": [
+    "**/*.{ts,tsx,js,jsx}"  // Only TypeScript and JavaScript
+  ],
+  "ignore": {
+    "useDefaultPatterns": true
+  }
+}
+```
+
+### Exclude Generated Files
+
+```json
+{
+  "ignore": {
+    "customPatterns": [
+      "**/*.generated.*",
+      "**/generated/**",
+      "**/__generated__/**"
+    ]
+  }
+}
+```
+
+### Include Configuration Files Only
+
+```json
+{
+  "include": [
+    "*.config.{js,ts,json}",
+    ".*rc",
+    ".*rc.{js,json,yml,yaml}"
+  ]
+}
+```
+
+## Pattern Testing
+
+Test your patterns with the `--verbose` flag to see which files are matched:
+
+```bash
+repomix --verbose
+```
+
+This shows:
+- Which ignore patterns are active
+- Which files are included/excluded
+- Pattern matching details
+
+## Git Integration
+
+### .git/info/exclude
+
+When `useGitignore` is enabled, Repomix also reads `.git/info/exclude` for local ignore rules.
+
+### Git Worktrees
+
+Repomix automatically handles git worktrees and adjusts ignore patterns accordingly.
+
+## Common Patterns
+
+### Ignore All Test Files
+
+```json
+{
+  "ignore": {
+    "customPatterns": [
+      "**/__tests__/**",
+      "**/*.test.*",
+      "**/*.spec.*",
+      "**/test/**",
+      "**/tests/**"
+    ]
+  }
+}
+```
+
+### Ignore Documentation
+
+```json
+{
+  "ignore": {
+    "customPatterns": [
+      "docs/**",
+      "**/*.md",
+      "!README.md"  // But keep README
+    ]
+  }
+}
+```
+
+### Include Only Source Code
+
+```json
+{
+  "include": [
+    "src/**/*",
+    "lib/**/*"
+  ],
+  "ignore": {
+    "useDefaultPatterns": true
+  }
+}
+```
+
+### Monorepo Configuration
+
+```json
+{
+  "include": [
+    "packages/*/src/**/*"
+  ],
+  "ignore": {
+    "customPatterns": [
+      "packages/*/dist/**",
+      "packages/*/node_modules/**",
+      "packages/*/*.test.*"
+    ]
+  }
+}
+```
+
+## Performance Tips
+
+1. **Be specific with include patterns** - Narrower patterns = faster processing
+2. **Use default patterns** - They exclude common large directories
+3. **Ignore lock files** - They're large and not useful for AI analysis
+4. **Respect .gitignore** - Usually excludes the right files
+
+## Troubleshooting
+
+### Files Not Being Ignored
+
+Check the pattern syntax and use `--verbose` to debug:
+
+```bash
+repomix --verbose
+```
+
+### Include Patterns Not Working
+
+Remember: ignore patterns are applied after include patterns. Check both:
+
+```json
+{
+  "include": ["src/**/*"],
+  "ignore": {
+    "customPatterns": []  // Make sure this isn't blocking
+  }
+}
+```
+
+### Pattern Performance Issues
+
+Avoid overly broad patterns like `**/*/**/*`. Use more specific patterns:
+
+```json
+// Slow
+{
+  "include": ["**/*/**/*/**/*"]
+}
+
+// Fast
+{
+  "include": ["src/**/*.ts"]
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Output Options" icon="file-export" href="/configuration/output-options">
+    Customize output format and content
+  </Card>
+  
+  <Card title="CLI Options" icon="terminal" href="/cli/options">
+    Learn about command-line flags
+  </Card>
+</CardGroup>

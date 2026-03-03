@@ -1,0 +1,325 @@
+---
+title: Troubleshooting
+description: Common issues and solutions for Repomix
+---
+
+# Troubleshooting
+
+Find solutions to common issues you might encounter when using Repomix.
+
+## Installation Issues
+
+### Command not found after installation
+
+**Problem**: Running `repomix` results in "command not found" error.
+
+**Solution**:
+1. Ensure the global bin directory is in your PATH:
+   ```bash
+   # For npm
+   npm config get prefix
+   # Add this to your PATH: <prefix>/bin
+   
+   # For yarn
+   yarn global bin
+   # Add this to your PATH
+   ```
+
+2. Alternatively, use npx instead:
+   ```bash
+   npx repomix@latest
+   ```
+
+### Permission errors during installation
+
+**Problem**: Permission denied errors when installing globally.
+
+**Solution**:
+1. Use a Node version manager (recommended):
+   ```bash
+   # Install nvm
+   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+   
+   # Install Node.js
+   nvm install node
+   ```
+
+2. Or configure npm to use a different directory:
+   ```bash
+   mkdir ~/.npm-global
+   npm config set prefix '~/.npm-global'
+   export PATH=~/.npm-global/bin:$PATH
+   ```
+
+## Runtime Issues
+
+### Files are being excluded unexpectedly
+
+**Problem**: Some files you expect to be included are missing from the output.
+
+**Solution**:
+1. Check if files match patterns in `.gitignore`, `.ignore`, or `.repomixignore`
+2. Disable default ignore patterns:
+   ```bash
+   repomix --no-default-patterns
+   ```
+3. Explicitly include files:
+   ```bash
+   repomix --include "**/*.js,**/*.ts"
+   ```
+4. Check the verbose output to see which files are being excluded:
+   ```bash
+   repomix --verbose
+   ```
+
+### Output file is too large for AI tools
+
+**Problem**: The generated output exceeds file size limits of your AI tool.
+
+**Solution**:
+1. Use compression to reduce token count:
+   ```bash
+   repomix --compress
+   ```
+
+2. Split the output into multiple files:
+   ```bash
+   repomix --split-output 1mb
+   ```
+
+3. Exclude unnecessary files:
+   ```bash
+   repomix --ignore "**/*.test.js,**/docs/**"
+   ```
+
+4. Include only specific directories:
+   ```bash
+   repomix --include "src/**"
+   ```
+
+### Security check fails
+
+**Problem**: Repomix detects sensitive information and refuses to continue.
+
+**Solution**:
+1. Review the flagged files for actual sensitive data
+2. Add files with false positives to `.repomixignore`
+3. If you're certain there's no sensitive data, disable the check:
+   ```bash
+   repomix --no-security-check
+   ```
+   **Warning**: Only disable security checks if you're absolutely sure your repository doesn't contain secrets.
+
+### Remote repository cloning fails
+
+**Problem**: Errors when trying to pack a remote repository.
+
+**Solution**:
+1. Verify the repository URL is correct
+2. Check if the repository is public (private repos require authentication)
+3. Try using GitHub shorthand format:
+   ```bash
+   repomix --remote user/repo
+   ```
+4. Specify branch explicitly:
+   ```bash
+   repomix --remote user/repo --remote-branch main
+   ```
+
+## Configuration Issues
+
+### Configuration file not being loaded
+
+**Problem**: Settings in `repomix.config.json` are being ignored.
+
+**Solution**:
+1. Ensure the config file is in the project root or specify the path:
+   ```bash
+   repomix --config path/to/repomix.config.json
+   ```
+
+2. Validate your JSON syntax using a JSON validator
+3. Check for typos in option names
+4. Use `--verbose` to see which config file is being loaded:
+   ```bash
+   repomix --verbose
+   ```
+
+### TypeScript config file not working
+
+**Problem**: `repomix.config.ts` is not being recognized.
+
+**Solution**:
+1. Install Repomix as a dev dependency (required for TS config):
+   ```bash
+   npm install -D repomix
+   ```
+
+2. Ensure you're exporting with `defineConfig`:
+   ```typescript
+   import { defineConfig } from 'repomix';
+   
+   export default defineConfig({
+     // your config
+   });
+   ```
+
+## Performance Issues
+
+### Slow processing for large repositories
+
+**Problem**: Repomix takes a long time to process your repository.
+
+**Solution**:
+1. Exclude unnecessary directories:
+   ```bash
+   repomix --ignore "**/node_modules/**,**/dist/**,**/.git/**"
+   ```
+
+2. Reduce the scope using include patterns:
+   ```bash
+   repomix --include "src/**/*.{js,ts}"
+   ```
+
+3. Process a specific directory instead of the entire repo:
+   ```bash
+   repomix path/to/directory
+   ```
+
+### Out of memory errors
+
+**Problem**: Node.js runs out of memory when processing large repositories.
+
+**Solution**:
+1. Increase Node.js memory limit:
+   ```bash
+   NODE_OPTIONS="--max-old-space-size=4096" repomix
+   ```
+
+2. Use file filtering to reduce the number of files:
+   ```bash
+   repomix --include "src/**" --ignore "**/*.min.js"
+   ```
+
+## Output Issues
+
+### Invalid XML/Markdown output
+
+**Problem**: The generated output has formatting issues.
+
+**Solution**:
+1. Use parsable style to escape special characters:
+   ```bash
+   repomix --parsable-style
+   ```
+   **Note**: This may increase token count.
+
+2. Try a different output format:
+   ```bash
+   repomix --style json
+   ```
+
+### Cannot copy to clipboard
+
+**Problem**: `--copy` option fails to copy output to clipboard.
+
+**Solution**:
+1. Ensure clipboard utilities are installed on your system:
+   - **macOS**: Built-in (pbcopy)
+   - **Linux**: Install `xclip` or `xsel`
+     ```bash
+     sudo apt-get install xclip
+     ```
+   - **Windows**: Built-in (clip)
+
+2. As a workaround, manually copy the output file or use stdout:
+   ```bash
+   repomix --stdout | pbcopy  # macOS
+   repomix --stdout | xclip -selection clipboard  # Linux
+   ```
+
+## MCP Server Issues
+
+### MCP server not connecting
+
+**Problem**: AI assistant cannot connect to Repomix MCP server.
+
+**Solution**:
+1. Verify the MCP configuration is correct:
+   ```json
+   {
+     "mcpServers": {
+       "repomix": {
+         "command": "npx",
+         "args": ["-y", "repomix", "--mcp"]
+       }
+     }
+   }
+   ```
+
+2. Test the MCP server manually:
+   ```bash
+   npx repomix@latest --mcp
+   ```
+
+3. Check the AI assistant logs for error messages
+
+4. Try using the Docker-based MCP server instead:
+   ```json
+   {
+     "mcpServers": {
+       "repomix-docker": {
+         "command": "docker",
+         "args": ["run", "-i", "--rm", "ghcr.io/yamadashy/repomix", "--mcp"]
+       }
+     }
+   }
+   ```
+
+## Docker Issues
+
+### Permission denied in Docker
+
+**Problem**: Docker container cannot write output files.
+
+**Solution**:
+1. Ensure proper volume mounting:
+   ```bash
+   docker run -v $(pwd):/app -it --rm ghcr.io/yamadashy/repomix
+   ```
+
+2. Check file permissions on the host directory
+
+### Docker image not found
+
+**Problem**: Cannot pull the Repomix Docker image.
+
+**Solution**:
+1. Use the correct image name:
+   ```bash
+   docker pull ghcr.io/yamadashy/repomix
+   ```
+
+2. Ensure you have internet connectivity
+3. Check Docker Hub/GitHub Container Registry status
+
+## Getting More Help
+
+If you're still experiencing issues:
+
+1. **Check existing issues**: Search [GitHub Issues](https://github.com/yamadashy/repomix/issues) to see if others have encountered the same problem
+
+2. **Enable verbose logging**: Run Repomix with `--verbose` to get detailed debug information:
+   ```bash
+   repomix --verbose
+   ```
+
+3. **Join the community**: Ask for help on [Discord](https://discord.gg/wNYzTwZFku)
+
+4. **Report a bug**: Create a new issue on [GitHub](https://github.com/yamadashy/repomix/issues/new) with:
+   - Repomix version (`repomix --version`)
+   - Node.js version (`node --version`)
+   - Operating system
+   - Complete error message
+   - Steps to reproduce
+   - Output from `--verbose` mode

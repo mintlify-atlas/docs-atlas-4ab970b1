@@ -1,0 +1,432 @@
+---
+title: Custom Instructions
+description: Add custom context and guidelines to your packed repository output
+icon: file-text
+---
+
+## Overview
+
+Custom instructions allow you to add project-specific context, guidelines, or instructions to the beginning of your packed repository output. This is particularly useful when sharing code with AI assistants or team members who need context about your project.
+
+## Header Text
+
+The simplest way to add custom text is using the `headerText` option, which adds a text block at the beginning of your output.
+
+### Using CLI
+
+Add header text directly from the command line:
+
+```bash
+repomix --header-text "This is a React application using TypeScript and Vite"
+```
+
+For multi-line instructions, use quotes:
+
+```bash
+repomix --header-text "Project: E-commerce Platform
+Stack: React, TypeScript, Node.js
+Focus on the payment processing module"
+```
+
+### Using Configuration File
+
+Add header text in your `repomix.config.json`:
+
+```json
+{
+  "output": {
+    "headerText": "This is a React application. Pay special attention to the authentication flow."
+  }
+}
+```
+
+For multi-line header text:
+
+```json
+{
+  "output": {
+    "headerText": "Project: E-commerce Platform\n\nKey Components:\n- Payment processing\n- User authentication\n- Product catalog\n\nPlease focus on security best practices."
+  }
+}
+```
+
+### Programmatic API
+
+Add header text when using Repomix as a library:
+
+```typescript
+import { pack, defaultConfig } from 'repomix';
+
+const config = {
+  ...defaultConfig,
+  cwd: process.cwd(),
+  output: {
+    ...defaultConfig.output,
+    headerText: `
+=== Project Context ===
+
+This is a microservices architecture with:
+- API Gateway (Express.js)
+- User Service (NestJS)
+- Payment Service (FastAPI)
+- Message Queue (RabbitMQ)
+
+Please review the error handling patterns.
+    `.trim()
+  }
+};
+
+const result = await pack([process.cwd()], config);
+```
+
+## Instruction Files
+
+For longer or more complex instructions, use a separate instruction file. This keeps your configuration clean and allows you to version control your instructions alongside your code.
+
+### Creating an Instruction File
+
+Create a file (e.g., `.repomix-instruction.md`) in your project root:
+
+```markdown
+# Project: Customer Analytics Dashboard
+
+## Overview
+This is a real-time analytics dashboard built with React and WebSocket connections.
+
+## Architecture
+- Frontend: React 18 + TypeScript + Vite
+- Backend: Node.js + Express + Socket.io
+- Database: PostgreSQL + Redis for caching
+- Message Queue: Apache Kafka
+
+## Key Features
+1. Real-time data visualization
+2. Custom dashboard builder
+3. Export to PDF/Excel
+4. Role-based access control
+
+## Important Notes
+- All WebSocket handlers are in `src/services/websocket/`
+- Database migrations are in `migrations/`
+- Environment variables are documented in `.env.example`
+- Security: All API endpoints require JWT authentication
+
+## Code Review Guidelines
+- Check for proper error handling in async functions
+- Verify TypeScript types are properly defined
+- Ensure WebSocket connections are properly cleaned up
+- Review SQL queries for potential injection vulnerabilities
+```
+
+### Using CLI
+
+Reference the instruction file:
+
+```bash
+repomix --instruction-file-path .repomix-instruction.md
+```
+
+Or use a different path:
+
+```bash
+repomix --instruction-file-path docs/ai-context.md
+```
+
+### Using Configuration File
+
+Add the instruction file path to `repomix.config.json`:
+
+```json
+{
+  "output": {
+    "instructionFilePath": ".repomix-instruction.md"
+  }
+}
+```
+
+Relative paths are resolved from the current working directory:
+
+```json
+{
+  "output": {
+    "instructionFilePath": "docs/ai-instructions.md"
+  }
+}
+```
+
+### Programmatic API
+
+Use instruction files programmatically:
+
+```typescript
+import { pack, defaultConfig } from 'repomix';
+import path from 'node:path';
+
+const config = {
+  ...defaultConfig,
+  cwd: process.cwd(),
+  output: {
+    ...defaultConfig.output,
+    instructionFilePath: '.repomix-instruction.md'
+  }
+};
+
+const result = await pack([process.cwd()], config);
+```
+
+## How Instructions Appear in Output
+
+Instructions are included in the output based on the chosen format:
+
+### XML Format
+
+With `headerText`:
+
+```xml
+<repository_structure>
+  <repository_description>
+    This is a React application. Pay attention to the authentication flow.
+  </repository_description>
+  <!-- rest of the output -->
+</repository_structure>
+```
+
+With `instructionFilePath`:
+
+```xml
+<repository_structure>
+  <repository_instruction>
+    # Project Context
+    This is a microservices application...
+  </repository_instruction>
+  <!-- rest of the output -->
+</repository_structure>
+```
+
+### Markdown Format
+
+With `headerText`:
+
+```markdown
+# Repository Structure
+
+## Repository Description
+This is a React application. Pay attention to the authentication flow.
+
+<!-- rest of the output -->
+```
+
+With `instructionFilePath`:
+
+```markdown
+# Repository Structure
+
+## Repository Instruction
+
+# Project Context
+This is a microservices application...
+
+<!-- rest of the output -->
+```
+
+### Plain Text Format
+
+With `headerText`:
+
+```
+================================================================================
+Repository Structure
+================================================================================
+
+--- Repository Description ---
+This is a React application. Pay attention to the authentication flow.
+
+...
+```
+
+## Combining Header Text and Instruction File
+
+You can use both `headerText` and `instructionFilePath` together:
+
+```json
+{
+  "output": {
+    "headerText": "IMPORTANT: Focus on security vulnerabilities in authentication",
+    "instructionFilePath": ".repomix-instruction.md"
+  }
+}
+```
+
+The header text will appear first, followed by the instruction file content.
+
+## Best Practices
+
+### 1. Be Specific
+
+Provide clear, actionable context:
+
+```markdown
+✅ Good:
+"This authentication module uses JWT tokens. Review the token refresh
+logic in src/auth/refresh.ts for potential race conditions."
+
+❌ Too vague:
+"This is an authentication system."
+```
+
+### 2. Structure Your Instructions
+
+Use headings and lists for better readability:
+
+```markdown
+## Quick Reference
+- API Gateway: Port 3000
+- Auth Service: Port 3001
+- Database: PostgreSQL on port 5432
+
+## Review Checklist
+1. Verify error handling
+2. Check TypeScript types
+3. Review test coverage
+4. Validate input sanitization
+```
+
+### 3. Include Context About the Project State
+
+```markdown
+## Current Status
+- ✅ User authentication complete
+- 🚧 Payment integration in progress (see src/payments/)
+- ❌ Email notifications not yet implemented
+
+## Known Issues
+- WebSocket reconnection needs improvement (Issue #123)
+- Performance bottleneck in dashboard rendering (Issue #145)
+```
+
+### 4. Version Control Your Instructions
+
+Keep your instruction file in version control:
+
+```bash
+git add .repomix-instruction.md
+git commit -m "docs: add AI context for code reviews"
+```
+
+Update instructions when your architecture changes:
+
+```bash
+# After migrating from REST to GraphQL
+# Update .repomix-instruction.md to reflect the new API structure
+```
+
+### 5. Use Different Instructions for Different Purposes
+
+Create multiple instruction files for different use cases:
+
+```bash
+# For general code review
+repomix --instruction-file-path .repomix-instruction.md
+
+# For security audit
+repomix --instruction-file-path docs/security-review-context.md
+
+# For onboarding new developers
+repomix --instruction-file-path docs/onboarding-guide.md
+```
+
+## Example Instruction Templates
+
+### Web Application Template
+
+```markdown
+# [Project Name]
+
+## Stack
+- Frontend: [Framework + Libraries]
+- Backend: [Framework + Database]
+- Infrastructure: [Hosting + Services]
+
+## Architecture Overview
+[Brief description of the architecture]
+
+## Key Directories
+- `src/components/`: React components
+- `src/api/`: API endpoints
+- `src/models/`: Database models
+- `src/utils/`: Utility functions
+
+## Important Patterns
+- [Pattern 1]: [Where and why it's used]
+- [Pattern 2]: [Where and why it's used]
+
+## Review Guidelines
+- [What to look for in code reviews]
+- [Common pitfalls to avoid]
+- [Security considerations]
+```
+
+### Library/Package Template
+
+```markdown
+# [Package Name]
+
+## Purpose
+[What this library does]
+
+## Public API
+- [Function/Class 1]: [Description]
+- [Function/Class 2]: [Description]
+
+## Internal Architecture
+[How the library is organized]
+
+## Dependencies
+- [Dependency 1]: [Why it's used]
+- [Dependency 2]: [Why it's used]
+
+## Testing Strategy
+[How tests are organized and run]
+
+## Breaking Changes to Avoid
+- [API contract 1]
+- [API contract 2]
+```
+
+### Microservices Template
+
+```markdown
+# [Service Name]
+
+## Responsibilities
+[What this service does in the system]
+
+## Dependencies
+- [Service 1]: [What it provides]
+- [Service 2]: [What it provides]
+
+## API Endpoints
+- `POST /endpoint1`: [Description]
+- `GET /endpoint2`: [Description]
+
+## Events Published
+- [Event 1]: [When and why]
+- [Event 2]: [When and why]
+
+## Events Consumed
+- [Event 1]: [How it's handled]
+- [Event 2]: [How it's handled]
+
+## Data Models
+[Key database schemas/tables]
+
+## Configuration
+- [Required env var 1]
+- [Required env var 2]
+```
+
+## Next Steps
+
+- Explore [Git Integration](/advanced/git-integration) for including version control context
+- Learn about [Programmatic API](/advanced/programmatic-api) for custom integrations
+- Check [Output Formats](/configuration/output-formats) for formatting options

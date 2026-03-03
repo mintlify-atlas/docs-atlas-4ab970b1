@@ -1,0 +1,195 @@
+---
+title: Init Command
+description: Initialize Repomix configuration files
+---
+
+The `--init` flag creates configuration files for Repomix in interactive mode.
+
+## Syntax
+
+```bash
+repomix --init [--global]
+```
+
+## Description
+
+The init command guides you through creating:
+
+1. **`repomix.config.json`** - Main configuration file
+2. **`.repomixignore`** - Pattern file for ignoring files (local only)
+
+The command uses an interactive prompt to configure:
+
+- Output format (XML, Markdown, JSON, or Plain)
+- Output file path
+
+## Options
+
+<ParamField path="--init" type="boolean">
+  Create a new `repomix.config.json` file with defaults.
+
+  ```bash
+  repomix --init
+  ```
+</ParamField>
+
+<ParamField path="--global" type="boolean">
+  With `--init`, create config in home directory instead of current directory.
+
+  ```bash
+  repomix --init --global
+  ```
+
+  The global config file is created at:
+  - **macOS/Linux:** `~/.config/repomix/repomix.config.json`
+  - **Windows:** `%APPDATA%\repomix\repomix.config.json`
+</ParamField>
+
+## Interactive Prompts
+
+When running `--init`, you'll be prompted for:
+
+### 1. Create Config File
+
+```
+Do you want to create a repomix.config.json file?
+```
+
+If the file already exists, you'll be asked whether to overwrite it.
+
+### 2. Output Style
+
+```
+Output style:
+  • XML - Structured XML format
+  • Markdown - Markdown format
+  • JSON - Machine-readable JSON format
+  • Plain - Simple text format
+```
+
+### 3. Output File Path
+
+```
+Output file path: repomix-output.xml
+```
+
+Default filename changes based on selected format.
+
+### 4. Create Ignore File
+
+```
+Do you want to create a .repomixignore file?
+```
+
+Only for local configs (not global).
+
+## Generated Config File
+
+The generated `repomix.config.json` includes:
+
+```json
+{
+  "$schema": "https://repomix.com/schemas/latest/schema.json",
+  "output": {
+    "filePath": "repomix-output.xml",
+    "style": "xml"
+  }
+}
+```
+
+## Generated Ignore File
+
+The generated `.repomixignore` includes example patterns:
+
+```
+# Add patterns to ignore here, one per line
+# Example:
+# *.log
+# tmp/
+```
+
+## Configuration Priority
+
+When multiple configs exist, Repomix uses this priority order:
+
+1. CLI arguments (highest priority)
+2. Custom config file (via `--config`)
+3. Local `repomix.config.json`
+4. Global config file
+5. Default values (lowest priority)
+
+## Examples
+
+### Initialize Local Config
+
+```bash
+repomix --init
+```
+
+Creates `repomix.config.json` and optionally `.repomixignore` in current directory.
+
+### Initialize Global Config
+
+```bash
+repomix --init --global
+```
+
+Creates config in your home directory for use across all projects.
+
+### Non-Interactive Init
+
+For automated setups, create the config file directly:
+
+```bash
+cat > repomix.config.json << EOF
+{
+  "\$schema": "https://repomix.com/schemas/latest/schema.json",
+  "output": {
+    "filePath": "repomix-output.xml",
+    "style": "xml"
+  }
+}
+EOF
+```
+
+## Config File Schema
+
+For complete configuration options, see:
+- [Configuration Reference](/configuration/overview)
+- [Schema Documentation](https://repomix.com/schemas/latest/schema.json)
+
+## Common Patterns
+
+### Project-Specific Config
+
+```bash
+# Initialize in project directory
+cd my-project
+repomix --init
+
+# Edit as needed
+vim repomix.config.json
+```
+
+### Global Default Config
+
+```bash
+# Set global defaults
+repomix --init --global
+
+# Override per-project
+cd my-project
+repomix --init
+```
+
+### Version Control
+
+```bash
+# Initialize config
+repomix --init
+
+# Commit config, ignore outputs
+echo "repomix-output.*" >> .gitignore
+git add repomix.config.json .repomixignore .gitignore
+git commit -m "Add Repomix configuration"
+```

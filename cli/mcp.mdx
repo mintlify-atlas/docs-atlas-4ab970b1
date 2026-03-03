@@ -1,0 +1,253 @@
+---
+title: MCP Server Mode
+description: Run Repomix as a Model Context Protocol server
+---
+
+The `--mcp` flag runs Repomix as a Model Context Protocol (MCP) server, enabling AI tools to pack repositories on demand.
+
+## Syntax
+
+```bash
+repomix --mcp
+```
+
+## Description
+
+MCP (Model Context Protocol) is a standard protocol for AI tools to interact with context providers. When run in MCP mode, Repomix acts as a server that AI assistants can call to pack codebases.
+
+## What is MCP?
+
+Model Context Protocol enables AI tools to:
+- Access repository context dynamically
+- Request packed files on demand
+- Integrate with development workflows
+- Provide up-to-date codebase information
+
+Learn more at [Model Context Protocol](https://modelcontextprotocol.io/).
+
+## Usage
+
+<ParamField path="--mcp" type="boolean">
+  Run as Model Context Protocol server for AI tool integration.
+
+  ```bash
+  repomix --mcp
+  ```
+</ParamField>
+
+## Server Behavior
+
+When started in MCP mode:
+
+1. Repomix runs as a persistent server process
+2. Listens for MCP requests from AI tools
+3. Processes repositories on demand
+4. Returns packed output to requesting clients
+
+## Configuration
+
+### Claude Desktop Integration
+
+To use with Claude Desktop, add to your config:
+
+**macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`  
+**Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "repomix": {
+      "command": "npx",
+      "args": ["-y", "repomix", "--mcp"]
+    }
+  }
+}
+```
+
+Or if Repomix is installed globally:
+
+```json
+{
+  "mcpServers": {
+    "repomix": {
+      "command": "repomix",
+      "args": ["--mcp"]
+    }
+  }
+}
+```
+
+### Other MCP Clients
+
+For other MCP-compatible clients, follow their documentation for registering external tools. The command is:
+
+```bash
+repomix --mcp
+```
+
+## Available Tools
+
+When running as an MCP server, Repomix exposes these tools to AI clients:
+
+### `repomix_pack`
+
+Pack a repository with specified options.
+
+**Parameters:**
+- `directory` (optional) - Directory to pack (default: current)
+- `include` (optional) - File patterns to include
+- `ignore` (optional) - File patterns to ignore
+- `style` (optional) - Output format: xml, markdown, json, plain
+- Other pack options as needed
+
+**Returns:**
+Packed repository content
+
+## Logging
+
+MCP server runs silently by default. To enable debug logging:
+
+```bash
+repomix --mcp --verbose
+```
+
+Logs are typically captured by the MCP client (e.g., Claude Desktop).
+
+## Server Lifecycle
+
+### Starting
+
+The server starts when launched:
+
+```bash
+repomix --mcp
+```
+
+### Running
+
+The server runs indefinitely, processing requests as they arrive.
+
+### Stopping
+
+Stop the server with:
+- `Ctrl+C` (when run directly)
+- MCP client shutdown (when integrated)
+
+## Examples
+
+### Start MCP Server
+
+```bash
+repomix --mcp
+```
+
+### Start with Verbose Logging
+
+```bash
+repomix --mcp --verbose
+```
+
+### Use with npx (No Installation)
+
+```bash
+npx -y repomix --mcp
+```
+
+### Run in Background (Unix)
+
+```bash
+nohup repomix --mcp > repomix-mcp.log 2>&1 &
+```
+
+## Troubleshooting
+
+### Server Not Starting
+
+**Check:**
+- Repomix is installed correctly
+- Port is not already in use
+- Sufficient permissions
+
+**Debug:**
+```bash
+repomix --mcp --verbose
+```
+
+### Client Can't Connect
+
+**Check:**
+- MCP client configuration is correct
+- Command path is absolute or in PATH
+- Server is running
+
+**Verify config:**
+```bash
+cat "$HOME/Library/Application Support/Claude/claude_desktop_config.json"
+```
+
+### Requests Failing
+
+**Check:**
+- Repository path is valid
+- User has read permissions
+- Disk space available
+
+**Test directly:**
+```bash
+repomix /path/to/test --verbose
+```
+
+## Limitations
+
+- MCP mode cannot be combined with other command modes (`--init`, `--remote`)
+- Only one server instance should run per system
+- Output is returned to client, not written to filesystem (unless requested)
+
+## Security Considerations
+
+- MCP server runs with same permissions as user
+- Can access any files the user can access
+- Requests should be validated by client
+- Consider running with restricted user account in production
+
+## Advanced Usage
+
+### Custom Server Configuration
+
+If using a custom Repomix config:
+
+```json
+{
+  "mcpServers": {
+    "repomix": {
+      "command": "repomix",
+      "args": ["--mcp", "--config", "/path/to/config.json"]
+    }
+  }
+}
+```
+
+### Multiple Server Instances
+
+You can configure multiple Repomix servers with different configs:
+
+```json
+{
+  "mcpServers": {
+    "repomix-default": {
+      "command": "repomix",
+      "args": ["--mcp"]
+    },
+    "repomix-compressed": {
+      "command": "repomix",
+      "args": ["--mcp", "--config", "./repomix-compressed.json"]
+    }
+  }
+}
+```
+
+## Related Resources
+
+- [Model Context Protocol Specification](https://modelcontextprotocol.io/)
+- [Claude Desktop MCP Guide](https://docs.anthropic.com/claude/docs/mcp)
+- [Repomix Configuration](/configuration/overview)

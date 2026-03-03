@@ -1,0 +1,308 @@
+---
+title: Remote Command
+description: Process remote Git repositories
+---
+
+The `--remote` option allows you to clone and pack a remote Git repository without manually cloning it first.
+
+## Syntax
+
+```bash
+repomix --remote <url> [options]
+```
+
+## Description
+
+Repomix can automatically:
+
+1. Clone the remote repository to a temporary directory
+2. Pack the contents using specified options
+3. Copy the output to your current directory
+4. Clean up the temporary directory
+
+For GitHub repositories, Repomix attempts to download the repository as a ZIP archive for faster processing. If that fails, it falls back to `git clone`.
+
+## Options
+
+<ParamField path="--remote" type="string">
+  Clone and pack a remote repository. Accepts GitHub URL or `user/repo` format.
+
+  ```bash
+  # Full GitHub URL
+  repomix --remote https://github.com/yamadashy/repomix
+
+  # Short GitHub format
+  repomix --remote yamadashy/repomix
+
+  # Other Git hosting
+  repomix --remote https://gitlab.com/user/repo.git
+  repomix --remote git@github.com:user/repo.git
+  ```
+</ParamField>
+
+<ParamField path="--remote-branch" type="string">
+  Specific branch, tag, or commit to use. If not specified, uses the repository's default branch.
+
+  ```bash
+  # Specific branch
+  repomix --remote user/repo --remote-branch develop
+
+  # Specific tag
+  repomix --remote user/repo --remote-branch v1.0.0
+
+  # Specific commit
+  repomix --remote user/repo --remote-branch abc123f
+  ```
+</ParamField>
+
+## Auto-Detection
+
+You can pass a remote URL as a positional argument instead of using `--remote`:
+
+```bash
+repomix https://github.com/user/repo
+```
+
+This auto-detects URLs with these protocols:
+- `https://`
+- `http://`
+- `git@`
+- `ssh://`
+- `git://`
+
+## Supported URL Formats
+
+### GitHub
+
+```bash
+# HTTPS
+repomix --remote https://github.com/user/repo
+
+# SSH
+repomix --remote git@github.com:user/repo.git
+
+# Short format
+repomix --remote user/repo
+
+# With branch
+repomix --remote user/repo --remote-branch main
+```
+
+### GitLab
+
+```bash
+# HTTPS
+repomix --remote https://gitlab.com/user/repo.git
+
+# SSH
+repomix --remote git@gitlab.com:user/repo.git
+```
+
+### Bitbucket
+
+```bash
+# HTTPS
+repomix --remote https://bitbucket.org/user/repo.git
+
+# SSH
+repomix --remote git@bitbucket.org:user/repo.git
+```
+
+### Self-Hosted Git
+
+```bash
+repomix --remote https://git.example.com/user/repo.git
+repomix --remote git@git.example.com:user/repo.git
+```
+
+## Download Methods
+
+### GitHub Archive (Preferred)
+
+For GitHub repositories, Repomix attempts to download as a ZIP archive:
+
+**Advantages:**
+- Faster download (no git history)
+- No git installation required
+- Progress indicator with percentage/size
+
+**Limitations:**
+- Only works for GitHub
+- Requires internet access to GitHub API
+
+### Git Clone (Fallback)
+
+If archive download fails or for non-GitHub repositories:
+
+**Requirements:**
+- Git must be installed
+- Git must be in system PATH
+
+**Features:**
+- Shallow clone (depth=1) for speed
+- Works with any Git hosting
+- Supports all Git protocols
+
+## Combining with Other Options
+
+All standard pack options work with `--remote`:
+
+```bash
+# Pack with specific format
+repomix --remote user/repo --style markdown
+
+# Pack only source files
+repomix --remote user/repo --include "src/**/*.ts"
+
+# Pack to clipboard
+repomix --remote user/repo --copy
+
+# Pack with custom output
+repomix --remote user/repo --output repo-analysis.xml
+
+# Pack without comments
+repomix --remote user/repo --remove-comments
+
+# Generate skill from remote repo
+repomix --remote user/repo --skill-generate
+```
+
+## Output Behavior
+
+### Default Mode
+
+Output is copied to current directory:
+
+```bash
+repomix --remote user/repo
+# Creates: ./repomix-output.xml
+```
+
+### Custom Output
+
+```bash
+repomix --remote user/repo --output analysis.xml
+# Creates: ./analysis.xml
+```
+
+### stdout Mode
+
+Output goes directly to stdout (no file created):
+
+```bash
+repomix --remote user/repo --stdout > output.xml
+```
+
+### Skill Generation
+
+When using `--skill-generate`, the skill directory is created in your current directory, not in the temporary clone directory:
+
+```bash
+repomix --remote user/repo --skill-generate
+# Creates skill in current directory
+```
+
+## Error Handling
+
+### Git Not Installed
+
+```
+Git is not installed or not in the system PATH.
+```
+
+**Solution:** Install Git and ensure it's in your PATH.
+
+### Archive Download Failed
+
+Repomix automatically falls back to git clone:
+
+```
+Archive download failed, trying git clone...
+```
+
+### Clone Failed
+
+```
+Failed to clone repository: <error message>
+```
+
+**Common causes:**
+- Invalid URL
+- Authentication required
+- Network issues
+- Branch/tag doesn't exist
+
+## Examples
+
+### Pack GitHub Repo
+
+```bash
+repomix --remote yamadashy/repomix
+```
+
+### Pack Specific Branch
+
+```bash
+repomix --remote yamadashy/repomix --remote-branch develop
+```
+
+### Pack and Analyze
+
+```bash
+repomix --remote user/repo --style json --output analysis.json
+```
+
+### Pack Only Documentation
+
+```bash
+repomix --remote user/repo --include "docs/**/*.md,README.md"
+```
+
+### Pack and Copy to Clipboard
+
+```bash
+repomix --remote user/repo --copy
+```
+
+### Pack Multiple Repos (Script)
+
+```bash
+#!/bin/bash
+for repo in user/repo1 user/repo2 user/repo3; do
+  repomix --remote $repo --output "${repo//\//-}.xml"
+done
+```
+
+### Pack with Custom Config
+
+```bash
+repomix --remote user/repo --config ./custom-config.json
+```
+
+### Generate Skill from Remote Repo
+
+```bash
+repomix --remote user/repo --skill-generate
+```
+
+## Performance Tips
+
+1. **Use GitHub short format** - Faster URL parsing
+   ```bash
+   repomix --remote user/repo  # Instead of full URL
+   ```
+
+2. **Specify branch** - Avoid ref lookup overhead
+   ```bash
+   repomix --remote user/repo --remote-branch main
+   ```
+
+3. **Use filters** - Process only needed files
+   ```bash
+   repomix --remote user/repo --include "src/**"
+   ```
+
+4. **stdout mode** - Skip file writing when piping
+   ```bash
+   repomix --remote user/repo --stdout | tool
+   ```

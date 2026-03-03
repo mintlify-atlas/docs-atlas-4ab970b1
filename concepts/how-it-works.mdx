@@ -1,0 +1,464 @@
+---
+title: How It Works
+description: Understanding Repomix's architecture and processing pipeline
+---
+
+Repomix follows a well-defined pipeline to transform your codebase into a single, AI-friendly file. This page explains the architecture and each stage of the processing pipeline.
+
+## Architecture Overview
+
+Repomix is built with a modular architecture that separates concerns into distinct phases:
+
+```
+┌─────────────────┐
+│  File Search    │  Discover files based on patterns
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│  File Collection│  Read file contents in parallel
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ Security Check  │  Scan for sensitive data
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ File Processing │  Transform content (remove comments, etc.)
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ Output Generation│ Generate formatted output
+└─────────────────┘
+```
+
+## Processing Pipeline
+
+### 1. File Search Phase
+
+The file search phase discovers all files in your repository that match the inclusion criteria.
+
+**Implementation:** `src/core/file/fileSearch.ts:96`
+
+<CodeGroup>
+```typescript Key Logic
+// Search files using globby with ignore patterns
+const filePaths = await globby(includePatterns, {
+  cwd: rootDir,
+  ignore: ignorePatterns,
+  gitignore: config.ignore.useGitignore,
+  ignoreFiles: ignoreFilePatterns,
+  absolute: false,
+  dot: true,
+  followSymbolicLinks: false,
+});
+```
+
+```bash Example Usage
+# Include only TypeScript files
+repomix --include "**/*.ts"
+
+# Include specific directories
+repomix --include "src/**" --include "lib/**"
+```
+</CodeGroup>
+
+**Features:**
+- Glob pattern matching for include/exclude
+- `.gitignore` integration (enabled by default)
+- `.repomixignore` support
+- Default ignore patterns for common artifacts
+- Empty directory detection (optional)
+
+<Note>
+The file search phase respects multiple ignore sources:
+1. Default patterns (node_modules, .git, etc.)
+2. `.gitignore` files
+3. `.repomixignore` files
+4. Custom ignore patterns from config
+5. `.git/info/exclude` patterns
+</Note>
+
+### 2. File Collection Phase
+
+Files are read from disk in parallel with controlled concurrency.
+
+**Implementation:** `src/core/file/fileCollect.ts:39`
+
+```typescript
+const FILE_COLLECT_CONCURRENCY = 50;
+
+// Read files in parallel with concurrency control
+const results = await promisePool(filePaths, FILE_COLLECT_CONCURRENCY, async (filePath) => {
+  const fullPath = path.resolve(rootDir, filePath);
+  const result = await deps.readRawFile(fullPath, maxFileSize);
+  
+  completedTasks++;
+  progressCallback(`Collect file... (${completedTasks}/${totalTasks})`);
+  
+  return { filePath, result };
+});
+```
+
+**Key Features:**
+- **Parallel Reading:** 50 files read concurrently for optimal I/O throughput
+- **Size Limits:** Files exceeding `maxFileSize` (default: 50MB) are skipped
+- **Error Handling:** Failed reads are tracked as skipped files
+- **Progress Tracking:** Real-time progress callbacks
+
+**File Skip Reasons:**
+- Binary files (detected by content analysis)
+- Files exceeding size limit
+- Permission errors
+- Read errors
+
+### 3. Security Check Phase
+
+Repomix uses Secretlint to detect sensitive information in your files.
+
+**Implementation:** `src/core/security/securityCheck.ts:16`
+
+```typescript
+// Run security checks on all files in parallel
+const taskRunner = initTaskRunner({
+  numOfTasks: rawFiles.length,
+  workerType: 'securityCheck',
+  runtime: 'worker_threads',
+});
+
+const results = await Promise.all(
+  tasks.map((task) =>
+    taskRunner.run(task).then((result) => {
+      completedTasks++;
+      progressCallback(`Running security check... (${completedTasks}/${totalTasks})`);
+      return result;
+    })
+  )
+);
+```
+
+**What's Scanned:**
+- All file contents
+- Git diff content (if `--include-diffs` enabled)
+- Git log content (if `--include-logs` enabled)
+
+**Detection Using Secretlint:** `src/core/security/workers/securityCheckWorker.ts:44`
+
+```typescript
+// Secretlint scans for sensitive patterns
+const result = await lintSource({
+  source: {
+    filePath: filePath,
+    content: content,
+    ext: filePath.split('.').pop() || '',
+    contentType: 'text',
+  },
+  options: {
+    config: {
+      rules: [{
+        id: '@secretlint/secretlint-rule-preset-recommend',
+        rule: creator,
+      }],
+    },
+  },
+});
+```
+
+<Warning>
+Files flagged during security checks are **automatically excluded** from the output. Review the security report to ensure no important files are incorrectly flagged.
+</Warning>
+
+See [Security](/concepts/security) for detailed information about security checks.
+
+### 4. File Processing Phase
+
+Files are transformed based on configuration options using worker threads for parallel processing.
+
+**Implementation:** `src/core/file/fileProcess.ts:12`
+
+```typescript
+const taskRunner = initTaskRunner({
+  numOfTasks: rawFiles.length,
+  workerType: 'fileProcess',
+  runtime: 'worker_threads', // Isolated worker threads
+});
+
+const results = await Promise.all(
+  tasks.map((task) =>
+    taskRunner.run(task).then((result) => {
+      completedTasks++;
+      progressCallback(`Processing file... (${completedTasks}/${totalTasks})`);
+      return result;
+    })
+  )
+);
+```
+
+**Processing Steps:** `src/core/file/fileProcessContent.ts:21`
+
+<Tabs>
+  <Tab title="Comment Removal">
+    ```typescript
+    if (config.output.removeComments) {
+      // Uses @repomix/strip-comments library
+      processedContent = manipulator.removeComments(processedContent);
+    }
+    ```
+    
+    Supports 25+ languages including JavaScript, TypeScript, Python, Java, C/C++, Go, Rust, and more.
+    
+    Enable with: `--remove-comments`
+  </Tab>
+  
+  <Tab title="Empty Line Removal">
+    ```typescript
+    if (config.output.removeEmptyLines) {
+      processedContent = processedContent
+        .split('\n')
+        .filter((line) => line.trim() !== '')
+        .join('\n');
+    }
+    ```
+    
+    Removes blank lines to reduce token count.
+    
+    Enable with: `--remove-empty-lines`
+  </Tab>
+  
+  <Tab title="Base64 Truncation">
+    ```typescript
+    if (config.output.truncateBase64) {
+      // Detect and truncate base64 encoded data
+      processedContent = truncateBase64Content(processedContent);
+    }
+    ```
+    
+    Identifies base64 strings and replaces them with `[BASE64_ENCODED_DATA]` to save tokens.
+    
+    Enable with: `--truncate-base64`
+  </Tab>
+  
+  <Tab title="Compression">
+    ```typescript
+    if (config.output.compress) {
+      // Use Tree-sitter to extract structure
+      const parsedContent = await parseFile(processedContent, rawFile.path, config);
+      processedContent = parsedContent ?? processedContent;
+    }
+    ```
+    
+    Uses Tree-sitter to extract only structural code (imports, exports, function signatures) for maximum compression.
+    
+    Enable with: `--compress`
+  </Tab>
+  
+  <Tab title="Line Numbers">
+    ```typescript
+    if (config.output.showLineNumbers) {
+      const lines = processedContent.split('\n');
+      const padding = lines.length.toString().length;
+      const numberedLines = lines.map((line, i) => 
+        `${(i + 1).toString().padStart(padding)}: ${line}`
+      );
+      processedContent = numberedLines.join('\n');
+    }
+    ```
+    
+    Adds line numbers to help AI assistants reference specific lines.
+    
+    Enable with: `--output-show-line-numbers`
+  </Tab>
+</Tabs>
+
+### 5. Output Generation Phase
+
+The final phase generates the formatted output file(s).
+
+**Implementation:** `src/core/output/outputGenerate.ts:253`
+
+```typescript
+export const generateOutput = async (
+  rootDirs: string[],
+  config: RepomixConfigMerged,
+  processedFiles: ProcessedFile[],
+  allFilePaths: string[],
+  gitDiffResult?: GitDiffResult,
+  gitLogResult?: GitLogResult,
+) => {
+  // Sort files by git changes if enabled
+  const sortedProcessedFiles = await sortOutputFiles(processedFiles, config);
+  
+  // Build output context
+  const outputGeneratorContext = await buildOutputGeneratorContext(
+    rootDirs,
+    config,
+    allFilePaths,
+    sortedProcessedFiles,
+    gitDiffResult,
+    gitLogResult,
+  );
+  
+  // Render using format-specific template
+  const renderContext = createRenderContext(outputGeneratorContext);
+  
+  switch (config.output.style) {
+    case 'xml':
+      return config.output.parsableStyle
+        ? generateParsableXmlOutput(renderContext)
+        : generateHandlebarOutput(config, renderContext);
+    case 'json':
+      return generateParsableJsonOutput(renderContext);
+    case 'markdown':
+    case 'plain':
+      return generateHandlebarOutput(config, renderContext);
+  }
+};
+```
+
+**Output Components:**
+
+1. **Generation Header** - Metadata about when and how the file was created
+2. **File Summary** - Purpose and format description (optional)
+3. **User Header** - Custom instructions via `--instruction-file-path`
+4. **Directory Structure** - Tree view of the repository (optional)
+5. **Files** - Processed file contents (optional)
+6. **Git Diffs** - Working tree and staged changes (optional)
+7. **Git Logs** - Recent commit history (optional)
+
+See [Output Formats](/concepts/output-formats) for detailed format specifications.
+
+## Worker Pool Architecture
+
+Repomix uses worker threads for CPU-intensive tasks to maximize performance:
+
+```typescript
+// Initialize task runner with worker pool
+const taskRunner = initTaskRunner({
+  numOfTasks: rawFiles.length,
+  workerType: 'fileProcess',
+  runtime: 'worker_threads', // or 'child_process' based on task type
+});
+
+// Process tasks in parallel
+const results = await Promise.all(
+  tasks.map((task) => taskRunner.run(task))
+);
+
+// Always cleanup worker pool
+await taskRunner.cleanup();
+```
+
+**Worker Types:**
+- `fileProcess` - File content processing (worker_threads)
+- `securityCheck` - Security scanning (worker_threads)
+- `calculateMetrics` - Token counting (worker_threads)
+- `defaultAction` - Main CLI orchestration (child_process)
+
+<Note>
+Worker threads are used for high-memory operations to prevent memory leaks in the main process. Child processes are used for operations that need separate V8 contexts.
+</Note>
+
+## Performance Optimizations
+
+### Parallel Processing
+
+```typescript
+// File collection: 50 files read concurrently
+const FILE_COLLECT_CONCURRENCY = 50;
+
+// File processing: Worker pool size based on CPU count
+const workers = Math.min(cpuCount, taskCount);
+```
+
+### Memory Management
+
+```typescript
+// Memory usage tracking at key points
+logMemoryUsage('Pack - Start');
+await withMemoryLogging('Search Files', async () => { ... });
+await withMemoryLogging('Collect Files', async () => { ... });
+await withMemoryLogging('Security Check', async () => { ... });
+await withMemoryLogging('Process Files', async () => { ... });
+logMemoryUsage('Pack - End');
+```
+
+### Caching
+
+```typescript
+// Handlebars template compilation cache
+const compiledTemplateCache = new Map<string, Handlebars.TemplateDelegate>();
+
+const getCompiledTemplate = (style: string) => {
+  const cached = compiledTemplateCache.get(style);
+  if (cached) return cached;
+  
+  const compiled = Handlebars.compile(template);
+  compiledTemplateCache.set(style, compiled);
+  return compiled;
+};
+```
+
+## Error Handling
+
+Repomix implements comprehensive error handling at each phase:
+
+```typescript
+try {
+  const results = await processFiles(rawFiles, config, progressCallback);
+  return results;
+} catch (error) {
+  logger.error('Error during file processing:', error);
+  throw error;
+} finally {
+  // Always cleanup worker pool
+  await taskRunner.cleanup();
+}
+```
+
+**Common Error Types:**
+- `RepomixError` - General Repomix errors
+- `PermissionError` - File access permission issues
+- `RangeError` - Output size exceeds JavaScript string limits
+
+## Configuration Flow
+
+Configuration is merged from multiple sources:
+
+```typescript
+// 1. Default configuration
+const defaultConfig = repomixConfigDefaultSchema.parse({ ... });
+
+// 2. File configuration (repomix.config.json)
+const fileConfig = await loadFileConfig(cwd, configPath);
+
+// 3. CLI configuration
+const cliConfig = buildCliConfig(cliOptions);
+
+// 4. Merge all configurations
+const config = mergeConfigs(cwd, fileConfig, cliConfig);
+```
+
+**Priority (highest to lowest):**
+1. CLI arguments
+2. Configuration file
+3. Default values
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Output Formats" icon="file-code" href="/concepts/output-formats">
+    Learn about XML, Markdown, JSON, and Plain Text output formats
+  </Card>
+  <Card title="File Selection" icon="filter" href="/concepts/file-selection">
+    Master include/exclude patterns and .gitignore integration
+  </Card>
+  <Card title="Security" icon="shield" href="/concepts/security">
+    Understand how Repomix protects sensitive data
+  </Card>
+  <Card title="Configuration" icon="gear" href="/configuration/config-file">
+    Configure Repomix for your workflow
+  </Card>
+</CardGroup>

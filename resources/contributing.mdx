@@ -1,0 +1,315 @@
+---
+title: Contributing
+description: How to contribute to Repomix development
+---
+
+# Contributing to Repomix
+
+Thanks for your interest in contributing to Repomix! We welcome contributions from the community and are grateful for your support.
+
+## Ways to Contribute
+
+There are many ways to contribute to Repomix:
+
+<CardGroup cols={2}>
+  <Card title="Report Bugs" icon="bug">
+    Found a bug? Create an issue on GitHub with details about the problem
+  </Card>
+  
+  <Card title="Suggest Features" icon="lightbulb">
+    Have an idea for a new feature? Share it in GitHub Discussions
+  </Card>
+  
+  <Card title="Submit Code" icon="code">
+    Fix bugs or implement features by submitting a pull request
+  </Card>
+  
+  <Card title="Improve Docs" icon="book">
+    Help improve documentation, README, or add examples
+  </Card>
+</CardGroup>
+
+## Quick Links
+
+<Card title="Full Contributing Guide" icon="github" href="https://github.com/yamadashy/repomix/blob/main/CONTRIBUTING.md">
+  Read the complete contributing guidelines on GitHub
+</Card>
+
+## Getting Started
+
+### 1. Set Up Development Environment
+
+Clone the repository and install dependencies:
+
+```bash
+git clone https://github.com/yamadashy/repomix.git
+cd repomix
+npm install
+```
+
+### 2. Run Repomix Locally
+
+Test your changes:
+
+```bash
+npm run repomix
+```
+
+### 3. Run Tests
+
+Ensure all tests pass:
+
+```bash
+# Run all tests
+npm run test
+
+# Run tests with coverage
+npm run test-coverage
+```
+
+### 4. Check Code Style
+
+Repomix uses [Biome](https://biomejs.dev/) for linting and formatting:
+
+```bash
+npm run lint
+```
+
+## Pull Request Guidelines
+
+Before submitting a pull request:
+
+<Steps>
+  <Step title="Run Tests">
+    Ensure all tests pass:
+    ```bash
+    npm run test
+    ```
+  </Step>
+  
+  <Step title="Check Linting">
+    Your code should adhere to the linting standards:
+    ```bash
+    npm run lint
+    ```
+  </Step>
+  
+  <Step title="Update Documentation">
+    If you've added or changed functionality, update the relevant documentation (especially README.md)
+  </Step>
+  
+  <Step title="Write Clear Commit Messages">
+    Follow the [Conventional Commits](https://www.conventionalcommits.org/) specification
+  </Step>
+</Steps>
+
+### Pull Request Checklist
+
+When creating a pull request, make sure to:
+
+- [ ] Run `npm run test`
+- [ ] Run `npm run lint`
+- [ ] Update documentation if needed
+- [ ] Add tests for new features
+- [ ] Write a clear PR description
+- [ ] Reference related issues (e.g., "Fixes #123")
+
+## Coding Standards
+
+### Code Style
+
+- Follow the existing code style in the project
+- Use meaningful variable and function names
+- Add comments for complex logic
+- Keep functions focused and concise
+
+### Testing
+
+Repomix uses [Vitest](https://vitest.dev/) for testing:
+
+```bash
+# Run tests
+npm run test
+
+# Run tests in watch mode
+npm run test -- --watch
+
+# Generate coverage report
+npm run test-coverage
+```
+
+### Commit Message Format
+
+Follow the [Conventional Commits](https://www.conventionalcommits.org/) specification:
+
+```
+type(scope): Description
+
+[optional body]
+
+[optional footer]
+```
+
+**Types:**
+- `feat`: New feature
+- `fix`: Bug fix
+- `docs`: Documentation changes
+- `style`: Code style changes (formatting, etc.)
+- `refactor`: Code refactoring
+- `test`: Adding or updating tests
+- `chore`: Maintenance tasks
+
+**Examples:**
+```
+feat(cli): Add new --compress option
+
+fix(security): Handle special characters in file paths
+
+docs(readme): Update installation instructions
+```
+
+## Development Workflow
+
+### Using Docker for Development
+
+You can also develop using Docker:
+
+```bash
+# Build the Docker image
+docker build -t repomix .
+
+# Run the Docker container
+docker run -v ./:/app -it --rm repomix
+```
+
+### Website Development
+
+The Repomix website is built with [VitePress](https://vitepress.dev/):
+
+```bash
+# Prerequisites: Docker must be installed
+
+# Start the website development server
+npm run website
+
+# Access at http://localhost:5173/
+```
+
+<Note>
+Contributors only need to update the README.md file. Maintainers will handle website documentation updates.
+</Note>
+
+## Reporting Issues
+
+When reporting bugs, please include:
+
+- Repomix version (`repomix --version`)
+- Node.js version (`node --version`)
+- Operating system
+- Steps to reproduce
+- Expected behavior
+- Actual behavior
+- Error messages or logs
+- Sample repository (if applicable)
+
+### Issue Template Example
+
+```markdown
+## Description
+Clear description of the issue
+
+## Environment
+- Repomix version: 1.12.0
+- Node.js version: 20.0.0
+- OS: macOS 14.0
+
+## Steps to Reproduce
+1. Run `repomix --remote user/repo`
+2. ...
+
+## Expected Behavior
+What you expected to happen
+
+## Actual Behavior
+What actually happened
+
+## Error Messages
+```
+paste error messages here
+```
+```
+
+## Feature Requests
+
+For feature requests:
+
+1. Check [existing discussions](https://github.com/yamadashy/repomix/discussions) to avoid duplicates
+2. Create a new discussion in the "Ideas" category
+3. Clearly describe:
+   - The problem you're trying to solve
+   - Your proposed solution
+   - Alternative solutions you've considered
+   - Why this feature would benefit other users
+
+## Community
+
+Join the Repomix community:
+
+<CardGroup cols={2}>
+  <Card title="GitHub Discussions" icon="github" href="https://github.com/yamadashy/repomix/discussions">
+    Share ideas, ask questions, and discuss Repomix development
+  </Card>
+  
+  <Card title="Discord Server" icon="discord" href="https://discord.gg/wNYzTwZFku">
+    Chat with other users and contributors in real-time
+  </Card>
+</CardGroup>
+
+## Other Ways to Help
+
+### Spread the Word
+
+- Star the repository on GitHub
+- Share Repomix on social media
+- Write blog posts about your experience
+- Present Repomix at meetups or conferences
+
+### Use Repomix
+
+The best feedback comes from real-world usage! Integrate Repomix into your projects and share your experiences.
+
+### Sponsor the Project
+
+Support ongoing development:
+
+<Card title="Become a Sponsor" icon="heart" href="https://github.com/sponsors/yamadashy">
+  Support Repomix development through GitHub Sponsors
+</Card>
+
+## Maintainers
+
+Repomix is maintained by:
+
+- **Yamadashy** ([@yamadashy](https://github.com/yamadashy))
+
+While all contributions are welcome, please understand that not every suggestion may be accepted if they don't align with the project's goals or coding standards.
+
+## Release Process
+
+New versions are managed by the maintainers. If you think a release is needed, open an issue to discuss it.
+
+## License
+
+By contributing to Repomix, you agree that your contributions will be licensed under the MIT License.
+
+## Questions?
+
+If you have questions about contributing:
+
+- Check the [Contributing Guide](https://github.com/yamadashy/repomix/blob/main/CONTRIBUTING.md)
+- Ask in [GitHub Discussions](https://github.com/yamadashy/repomix/discussions)
+- Join our [Discord Server](https://discord.gg/wNYzTwZFku)
+
+---
+
+**Thank you for contributing to Repomix!** 🚀

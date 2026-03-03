@@ -1,0 +1,320 @@
+---
+title: Basic Options
+description: Version info, logging level, and clipboard operations
+---
+
+Basic options control fundamental CLI behavior like version display, logging verbosity, and output destinations.
+
+## Version Information
+
+<ParamField path="--version" alias="-v" type="boolean">
+  Show version information and exit.
+
+  ```bash
+  repomix --version
+  repomix -v
+  ```
+
+  **Output:**
+  ```
+  📦 Repomix v1.0.0
+  ```
+</ParamField>
+
+## Logging Options
+
+<ParamField path="--verbose" type="boolean">
+  Enable detailed debug logging. Shows file processing, token counts, and configuration details.
+
+  ```bash
+  repomix --verbose
+  ```
+
+  **Cannot be used with:** `--quiet`, `--stdout`
+
+  **Output includes:**
+  - File discovery and processing
+  - Configuration loading and merging
+  - Token counting details
+  - Git operations
+  - Performance metrics
+</ParamField>
+
+<ParamField path="--quiet" type="boolean">
+  Suppress all console output except errors. Useful for scripting.
+
+  ```bash
+  repomix --quiet
+  ```
+
+  **Cannot be used with:** `--verbose`
+
+  **Use cases:**
+  - Automated scripts
+  - CI/CD pipelines
+  - Background processing
+
+  **Example in script:**
+  ```bash
+  #!/bin/bash
+  if repomix --quiet; then
+    echo "Success"
+  else
+    echo "Failed"
+    exit 1
+  fi
+  ```
+</ParamField>
+
+## Output Destinations
+
+<ParamField path="--stdout" type="boolean">
+  Write packed output directly to stdout instead of a file. Suppresses all logging.
+
+  ```bash
+  repomix --stdout
+  ```
+
+  **Cannot be used with:** `--output`, `--split-output`, `--skill-generate`, `--copy`
+
+  **Use cases:**
+  - Piping to other commands
+  - Capturing output in scripts
+  - Integration with other tools
+
+  **Examples:**
+  ```bash
+  # Save with custom name
+  repomix --stdout > custom-output.xml
+
+  # Pipe to clipboard (macOS)
+  repomix --stdout | pbcopy
+
+  # Pipe to clipboard (Linux)
+  repomix --stdout | xclip -selection clipboard
+
+  # Pipe to another tool
+  repomix --stdout | gzip > packed.xml.gz
+
+  # Count lines
+  repomix --stdout | wc -l
+  ```
+</ParamField>
+
+<ParamField path="--copy" type="boolean">
+  Copy the generated output to system clipboard after processing.
+
+  ```bash
+  repomix --copy
+  ```
+
+  **Cannot be used with:** `--stdout`, `--split-output`, `--skill-generate`
+
+  **Platform support:**
+  - macOS: Uses `pbcopy`
+  - Linux: Uses `xclip` or `xsel`
+  - Windows: Uses `clip`
+
+  **Example:**
+  ```bash
+  # Pack and copy in one command
+  repomix --copy
+
+  # Then paste directly into AI chat
+  ```
+</ParamField>
+
+## Input Options
+
+<ParamField path="--stdin" type="boolean">
+  Read file paths from stdin, one per line. Specified files are processed directly without pattern matching.
+
+  ```bash
+  # List files to stdin
+  find src -name "*.ts" | repomix --stdin
+  ```
+
+  **Important:**
+  - Do not specify directory arguments when using `--stdin`
+  - Files are processed as-is (no glob pattern matching)
+  - Each line should contain one file path
+  - Paths can be relative or absolute
+
+  **Examples:**
+  ```bash
+  # Using with find
+  find src -type f -name "*.ts" | repomix --stdin
+
+  # Using with git
+  git ls-files | repomix --stdin
+
+  # Using with fd
+  fd -e ts | repomix --stdin
+
+  # Using with fzf for interactive selection
+  fzf -m | repomix --stdin
+
+  # From a file list
+  cat files.txt | repomix --stdin
+
+  # Combining multiple sources
+  { git ls-files; git ls-files --others --exclude-standard; } | repomix --stdin
+  ```
+
+  **File format:**
+  ```
+  src/index.ts
+  src/utils/helper.ts
+  tests/unit/test.ts
+  ```
+</ParamField>
+
+## Display Options
+
+<ParamField path="--top-files-len" type="number" default="5">
+  Number of largest files to show in summary.
+
+  ```bash
+  # Show top 20 files
+  repomix --top-files-len 20
+
+  # Show top 10 files
+  repomix --top-files-len 10
+
+  # Hide top files
+  repomix --top-files-len 0
+  ```
+
+  **Must be:** Non-negative integer
+
+  **Example output:**
+  ```
+  Top 5 Largest Files:
+  1. src/large-file.ts (15,234 tokens)
+  2. src/another.ts (12,456 tokens)
+  3. src/third.ts (8,901 tokens)
+  ...
+  ```
+</ParamField>
+
+<ParamField path="--token-count-tree" type="boolean | number">
+  Show file tree with token counts. Optional threshold to show only files with ≥N tokens.
+
+  ```bash
+  # Show tree for all files
+  repomix --token-count-tree
+
+  # Show only files with ≥100 tokens
+  repomix --token-count-tree 100
+
+  # Show only files with ≥1000 tokens
+  repomix --token-count-tree 1000
+  ```
+
+  **Threshold:** Non-negative integer (optional)
+
+  **Example output:**
+  ```
+  Token Count Tree:
+  src/
+    index.ts (1,234 tokens)
+    utils/
+      helper.ts (567 tokens)
+      parser.ts (2,345 tokens)
+  tests/
+    main.test.ts (890 tokens)
+  ```
+
+  **With threshold:**
+  ```bash
+  repomix --token-count-tree 1000
+  ```
+
+  ```
+  Token Count Tree (≥1000 tokens):
+  src/
+    index.ts (1,234 tokens)
+    utils/
+      parser.ts (2,345 tokens)
+  ```
+</ParamField>
+
+## Option Conflicts
+
+Some options cannot be used together:
+
+### Logging Conflicts
+
+- `--verbose` ⚔️ `--quiet` - Choose one logging level
+- `--verbose` ⚔️ `--stdout` - stdout mode requires silence
+- `--quiet` ⚔️ `--stdout` - Already implied by stdout
+
+### Output Conflicts
+
+- `--stdout` ⚔️ `--output` - Choose stdout or file
+- `--stdout` ⚔️ `--copy` - Cannot copy from stdout
+- `--stdout` ⚔️ `--split-output` - Cannot split stdout
+
+## Examples
+
+### Basic Usage
+
+```bash
+# Check version
+repomix --version
+
+# Verbose logging
+repomix --verbose
+
+# Quiet mode
+repomix --quiet
+```
+
+### Output Control
+
+```bash
+# Output to stdout
+repomix --stdout > output.xml
+
+# Copy to clipboard
+repomix --copy
+
+# Combine with other options
+repomix --quiet --copy
+```
+
+### File Input
+
+```bash
+# Process specific files
+git diff --name-only | repomix --stdin
+
+# Interactive file selection
+fd -e ts | fzf -m | repomix --stdin --copy
+```
+
+### Display Control
+
+```bash
+# Show more top files
+repomix --top-files-len 20
+
+# Show token tree
+repomix --token-count-tree
+
+# Show large files only
+repomix --token-count-tree 500 --top-files-len 10
+```
+
+### Scripting
+
+```bash
+#!/bin/bash
+# Quiet pack with error handling
+if repomix --quiet --output report.xml; then
+  echo "Pack successful: report.xml"
+else
+  echo "Pack failed" >&2
+  exit 1
+fi
+```

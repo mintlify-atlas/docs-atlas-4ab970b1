@@ -1,0 +1,132 @@
+---
+title: Introduction
+description: Pack your entire codebase into AI-friendly formats for seamless integration with Large Language Models
+---
+
+## What is Repomix?
+
+Repomix is a powerful tool that packs your entire repository into a single, AI-friendly file. It transforms your codebase into formats that Large Language Models (LLMs) can easily understand and process, making it perfect for AI-assisted development workflows.
+
+Whether you're working with Claude, ChatGPT, DeepSeek, Perplexity, Gemini, or any other AI tool, Repomix prepares your code for seamless AI analysis and interaction.
+
+## Why use Repomix?
+
+When working with AI assistants on code-related tasks, you often need to provide context about your entire codebase. Manually copying files or explaining your project structure is time-consuming and error-prone. Repomix solves this by:
+
+- **Automating context preparation**: Generate a complete, structured snapshot of your codebase in seconds
+- **Optimizing for AI consumption**: Output formats designed specifically for LLM comprehension
+- **Reducing token usage**: Smart compression and filtering to stay within AI context limits
+- **Maintaining security**: Built-in checks to prevent accidentally sharing sensitive information
+
+## Key features
+
+<CardGroup cols={2}>
+  <Card title="AI-optimized formats" icon="brain">
+    Structures your codebase in XML, Markdown, JSON, or plain text formats specifically designed for AI comprehension and processing.
+  </Card>
+  
+  <Card title="Token counting" icon="calculator">
+    Provides precise token counts for each file and the entire repository, helping you stay within LLM context limits.
+  </Card>
+  
+  <Card title="Simple to use" icon="bolt">
+    Pack your entire repository with a single command. No complex configuration required to get started.
+  </Card>
+  
+  <Card title="Highly customizable" icon="sliders">
+    Fine-tune what to include or exclude using glob patterns, ignore files, and configuration options.
+  </Card>
+  
+  <Card title="Git-aware" icon="code-branch">
+    Automatically respects `.gitignore`, `.ignore`, and `.repomixignore` files. Sorts files by change frequency for better AI context.
+  </Card>
+  
+  <Card title="Security-focused" icon="shield">
+    Incorporates Secretlint to detect and prevent inclusion of API keys, passwords, and other sensitive information.
+  </Card>
+  
+  <Card title="Code compression" icon="compress">
+    Uses Tree-sitter to extract essential code structure, reducing token count by ~70% while preserving semantic meaning.
+  </Card>
+  
+  <Card title="Remote repositories" icon="globe">
+    Pack any GitHub repository without cloning. Perfect for analyzing open-source projects or using as code references.
+  </Card>
+</CardGroup>
+
+## How it works
+
+Repomix scans your repository and combines all relevant files into a single output file with:
+
+1. **File summary**: Metadata about your repository, including file counts, token statistics, and usage guidelines for AI
+2. **Directory structure**: A tree visualization showing your project organization
+3. **File contents**: All your code files with clear separators and optional line numbers
+4. **Custom instructions**: Optional sections for project-specific context or AI instructions
+
+<Tip>
+The XML output format uses structured tags that help AI models better understand and parse your codebase. Learn more in Anthropic's guide on [using XML tags with Claude](https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/use-xml-tags).
+</Tip>
+
+## Common use cases
+
+### Code review and refactoring
+
+Provide your entire codebase to an AI assistant for comprehensive code review, architecture analysis, or refactoring suggestions.
+
+```
+This file contains my entire codebase. Please review the overall structure 
+and suggest any improvements or refactoring opportunities, focusing on 
+maintainability and scalability.
+```
+
+### Documentation generation
+
+Generate comprehensive documentation, README files, or API references based on your actual code.
+
+```
+Based on the codebase in this file, please generate a detailed README.md 
+that includes an overview of the project, its main features, setup 
+instructions, and usage examples.
+```
+
+### Test case generation
+
+Let AI analyze your code and suggest comprehensive test coverage.
+
+```
+Analyze the code in this file and suggest a comprehensive set of unit 
+tests for the main functions and classes. Include edge cases and potential 
+error scenarios.
+```
+
+### Library analysis
+
+Quickly understand how a third-party library or framework works by analyzing its source code.
+
+```
+This file contains the entire codebase of the library. Please provide a 
+comprehensive overview, including its main purpose, key features, and 
+overall architecture.
+```
+
+## Multiple ways to use Repomix
+
+Repomix offers flexibility in how you interact with it:
+
+- **CLI tool**: Run locally via npx, npm, yarn, bun, Homebrew, or Docker
+- **Web interface**: Use [repomix.com](https://repomix.com) directly in your browser
+- **Browser extension**: Add a "Repomix" button to GitHub repository pages
+- **VSCode extension**: Run Repomix directly inside your editor
+- **MCP server**: Integrate with AI assistants for automatic codebase analysis
+
+## What's next?
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Install Repomix using your preferred package manager or method
+  </Card>
+  
+  <Card title="Quick start" icon="rocket" href="/quickstart">
+    Pack your first repository and use it with AI in minutes
+  </Card>
+</CardGroup>

@@ -1,0 +1,397 @@
+---
+title: Programmatic API
+description: Use Repomix as a Node.js library to pack repositories programmatically
+icon: code
+---
+
+## Overview
+
+Repomix can be used as a Node.js library, allowing you to integrate repository packing functionality directly into your applications. The programmatic API provides full control over the packing process with TypeScript support.
+
+## Installation
+
+First, install Repomix as a dependency:
+
+```bash
+npm install repomix
+```
+
+## Core API Exports
+
+Repomix exports a comprehensive set of functions and types from its main entry point:
+
+### Main Packing Function
+
+```typescript
+import { pack, type PackResult } from 'repomix';
+```
+
+### Configuration
+
+```typescript
+import { 
+  defineConfig,
+  loadFileConfig,
+  mergeConfigs,
+  type RepomixConfig 
+} from 'repomix';
+```
+
+### File Operations
+
+```typescript
+import {
+  collectFiles,
+  sortPaths,
+  processFiles,
+  searchFiles,
+  type FileSearchResult
+} from 'repomix';
+```
+
+### Tree Generation
+
+```typescript
+import {
+  generateFileTree,
+  generateTreeString,
+  treeToString,
+  type TreeNode
+} from 'repomix';
+```
+
+## Using the `pack()` Function
+
+The `pack()` function is the primary API for packing repositories. It accepts multiple directories and returns detailed metrics about the packing process.
+
+### Function Signature
+
+```typescript
+pack(
+  rootDirs: string[],
+  config: RepomixConfigMerged,
+  progressCallback?: RepomixProgressCallback,
+  overrideDeps?: Partial<typeof defaultDeps>,
+  explicitFiles?: string[],
+  options?: PackOptions
+): Promise<PackResult>
+```
+
+### Parameters
+
+- **rootDirs**: Array of directory paths to pack
+- **config**: Merged configuration object
+- **progressCallback**: Optional callback for progress updates
+- **overrideDeps**: Optional dependency injection for testing
+- **explicitFiles**: Optional array of specific files to include
+- **options**: Additional options like skill generation
+
+### Return Type: PackResult
+
+The `pack()` function returns a `PackResult` object with the following properties:
+
+```typescript
+interface PackResult {
+  totalFiles: number;
+  totalCharacters: number;
+  totalTokens: number;
+  fileCharCounts: Record<string, number>;
+  fileTokenCounts: Record<string, number>;
+  gitDiffTokenCount: number;
+  gitLogTokenCount: number;
+  outputFiles?: string[];
+  suspiciousFilesResults: SuspiciousFileResult[];
+  suspiciousGitDiffResults: SuspiciousFileResult[];
+  suspiciousGitLogResults: SuspiciousFileResult[];
+  processedFiles: ProcessedFile[];
+  safeFilePaths: string[];
+  skippedFiles: SkippedFileInfo[];
+}
+```
+
+## Basic Example
+
+Here's a complete example of using Repomix programmatically:
+
+```typescript
+import { pack, loadFileConfig, mergeConfigs, defaultConfig } from 'repomix';
+import path from 'node:path';
+
+const packRepository = async () => {
+  // Define the directory to pack
+  const rootDir = process.cwd();
+  
+  // Load configuration from file (if exists)
+  const fileConfig = await loadFileConfig(rootDir);
+  
+  // Merge with default config
+  const config = mergeConfigs(
+    defaultConfig,
+    fileConfig || {},
+    { cwd: rootDir }
+  );
+  
+  // Pack the repository
+  const result = await pack(
+    [rootDir],
+    config,
+    (message) => console.log(`Progress: ${message}`)
+  );
+  
+  // Use the results
+  console.log(`Packed ${result.totalFiles} files`);
+  console.log(`Total tokens: ${result.totalTokens.toLocaleString()}`);
+  console.log(`Output files: ${result.outputFiles?.join(', ')}`);
+  
+  return result;
+};
+
+packRepository().catch(console.error);
+```
+
+## Custom Configuration Example
+
+Create a custom configuration programmatically:
+
+```typescript
+import { pack, defineConfig, defaultConfig } from 'repomix';
+
+const customConfig = defineConfig({
+  output: {
+    filePath: 'my-output.xml',
+    style: 'xml',
+    removeComments: true,
+    removeEmptyLines: true,
+    showLineNumbers: true,
+    git: {
+      sortByChanges: true,
+      sortByChangesMaxCommits: 100,
+      includeDiffs: true,
+      includeLogs: true,
+      includeLogsCount: 50
+    }
+  },
+  ignore: {
+    customPatterns: ['*.test.ts', 'dist/**']
+  },
+  security: {
+    enableSecurityCheck: true
+  }
+});
+
+const config = {
+  ...defaultConfig,
+  ...customConfig,
+  cwd: process.cwd()
+};
+
+const result = await pack([process.cwd()], config);
+```
+
+## Processing Specific Files
+
+You can pack specific files instead of entire directories:
+
+```typescript
+import { pack, defaultConfig } from 'repomix';
+
+const specificFiles = [
+  'src/index.ts',
+  'src/core/packager.ts',
+  'README.md'
+];
+
+const config = {
+  ...defaultConfig,
+  cwd: process.cwd()
+};
+
+const result = await pack(
+  [process.cwd()],
+  config,
+  undefined,
+  {},
+  specificFiles
+);
+```
+
+## Progress Tracking
+
+Monitor the packing process with a progress callback:
+
+```typescript
+import { pack, defaultConfig, type RepomixProgressCallback } from 'repomix';
+
+const progressCallback: RepomixProgressCallback = (message: string) => {
+  console.log(`[${new Date().toISOString()}] ${message}`);
+};
+
+const config = {
+  ...defaultConfig,
+  cwd: process.cwd()
+};
+
+const result = await pack(
+  [process.cwd()],
+  config,
+  progressCallback
+);
+
+// Output:
+// [2024-03-15T10:30:00.000Z] Searching for files...
+// [2024-03-15T10:30:00.500Z] Sorting files...
+// [2024-03-15T10:30:00.750Z] Collecting files...
+// [2024-03-15T10:30:01.000Z] Getting git diffs...
+// [2024-03-15T10:30:01.250Z] Getting git logs...
+// [2024-03-15T10:30:01.500Z] Processing files...
+// [2024-03-15T10:30:02.000Z] Generating output...
+```
+
+## Security Check Results
+
+Handle security check results to identify potentially sensitive files:
+
+```typescript
+import { pack, defaultConfig } from 'repomix';
+
+const config = {
+  ...defaultConfig,
+  cwd: process.cwd(),
+  security: {
+    enableSecurityCheck: true
+  }
+};
+
+const result = await pack([process.cwd()], config);
+
+// Check for suspicious files
+if (result.suspiciousFilesResults.length > 0) {
+  console.warn('⚠️  Suspicious files detected:');
+  for (const suspicious of result.suspiciousFilesResults) {
+    console.warn(`  - ${suspicious.filePath}: ${suspicious.messages.join(', ')}`);
+  }
+}
+
+// Check for suspicious content in git diffs
+if (result.suspiciousGitDiffResults.length > 0) {
+  console.warn('⚠️  Suspicious content in git diffs');
+}
+
+// Check for suspicious content in git logs
+if (result.suspiciousGitLogResults.length > 0) {
+  console.warn('⚠️  Suspicious content in git logs');
+}
+```
+
+## File Tree Generation
+
+Generate file trees independently:
+
+```typescript
+import { generateFileTree, generateTreeString } from 'repomix';
+
+const files = [
+  'src/index.ts',
+  'src/core/packager.ts',
+  'src/config/configSchema.ts',
+  'README.md'
+];
+
+const tree = generateFileTree(files);
+const treeString = generateTreeString(tree, '.');
+
+console.log(treeString);
+// Output:
+// .
+// ├── src/
+// │   ├── index.ts
+// │   ├── core/
+// │   │   └── packager.ts
+// │   └── config/
+// │       └── configSchema.ts
+// └── README.md
+```
+
+## Token Counting
+
+Use the TokenCounter for custom token counting:
+
+```typescript
+import { TokenCounter } from 'repomix';
+
+const counter = new TokenCounter('o200k_base');
+const text = 'Your source code here';
+const tokenCount = counter.countTokens(text);
+
+console.log(`Token count: ${tokenCount}`);
+```
+
+## CLI Actions
+
+You can also invoke CLI actions programmatically:
+
+```typescript
+import { runDefaultAction, runInitAction, runRemoteAction } from 'repomix';
+
+// Run default action (pack current directory)
+await runDefaultAction(['.'], process.cwd(), {
+  output: 'custom-output.xml',
+  style: 'xml',
+  verbose: true
+});
+
+// Initialize a config file
+await runInitAction(process.cwd(), false);
+
+// Pack a remote repository
+await runRemoteAction('https://github.com/user/repo', {
+  output: 'remote-output.xml'
+});
+```
+
+## Error Handling
+
+Handle errors properly when using the API:
+
+```typescript
+import { pack, defaultConfig, RepomixError } from 'repomix';
+
+try {
+  const config = {
+    ...defaultConfig,
+    cwd: process.cwd()
+  };
+  
+  const result = await pack([process.cwd()], config);
+  console.log('Success:', result);
+} catch (error) {
+  if (error instanceof RepomixError) {
+    console.error('Repomix error:', error.message);
+  } else {
+    console.error('Unexpected error:', error);
+  }
+}
+```
+
+## TypeScript Support
+
+Repomix is written in TypeScript and provides full type definitions. All exported types are available:
+
+```typescript
+import type {
+  PackResult,
+  RepomixConfig,
+  RepomixConfigMerged,
+  RepomixProgressCallback,
+  CliOptions,
+  FileSearchResult,
+  TreeNode,
+  SuspiciousFileResult
+} from 'repomix';
+```
+
+## Next Steps
+
+- Learn about [Custom Instructions](/advanced/custom-instructions) for adding context to packed output
+- Explore [Git Integration](/advanced/git-integration) for version control features
+- Check the [Configuration Reference](/configuration/options) for all available options

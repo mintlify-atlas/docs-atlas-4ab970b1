@@ -1,0 +1,283 @@
+---
+title: AI Prompt Examples
+description: Example prompts for using packed repositories with AI tools
+---
+
+# AI Prompt Examples
+
+Once you have generated a packed file with Repomix, you can use it with AI tools like ChatGPT, Claude, DeepSeek, Perplexity, Gemini, Gemma, Llama, Grok, and more. Here are effective prompts to get you started.
+
+## Code Review and Refactoring
+
+For a comprehensive code review and refactoring suggestions:
+
+```
+This file contains my entire codebase. Please review the overall structure and suggest any improvements or refactoring opportunities, focusing on maintainability and scalability.
+```
+
+**When to use**: Before starting a major refactoring project or when you want to identify technical debt.
+
+**Tips**:
+- Be specific about areas of concern (e.g., "focusing on the authentication module")
+- Ask for prioritized recommendations
+- Request specific code examples for suggested improvements
+
+## Documentation Generation
+
+To generate project documentation:
+
+```
+Based on the codebase in this file, please generate a detailed README.md that includes an overview of the project, its main features, setup instructions, and usage examples.
+```
+
+**When to use**: Starting a new project or improving existing documentation.
+
+**Variations**:
+```
+Generate API documentation for all public functions and classes in this codebase.
+```
+
+```
+Create a comprehensive developer guide for onboarding new team members, including architecture overview and coding conventions used in this project.
+```
+
+## Test Case Generation
+
+For generating test cases:
+
+```
+Analyze the code in this file and suggest a comprehensive set of unit tests for the main functions and classes. Include edge cases and potential error scenarios.
+```
+
+**When to use**: Improving test coverage or implementing TDD practices.
+
+**Variations**:
+```
+Generate integration tests for the API endpoints defined in this codebase.
+```
+
+```
+Create test cases for the authentication and authorization logic, including security edge cases.
+```
+
+## Code Quality Assessment
+
+Evaluate code quality and adherence to best practices:
+
+```
+Review the codebase for adherence to coding best practices and industry standards. Identify areas where the code could be improved in terms of readability, maintainability, and efficiency. Suggest specific changes to align the code with best practices.
+```
+
+**When to use**: Code audits, pre-release reviews, or establishing coding standards.
+
+**Variations**:
+```
+Analyze this codebase for potential security vulnerabilities and suggest fixes.
+```
+
+```
+Review the code for performance bottlenecks and suggest optimizations.
+```
+
+## Library/Framework Overview
+
+Get a high-level understanding of a library or framework:
+
+```
+This file contains the entire codebase of [library name]. Please provide a comprehensive overview of the library, including its main purpose, key features, and overall architecture.
+```
+
+**When to use**: Learning a new library or evaluating third-party dependencies.
+
+**Follow-up prompts**:
+```
+What are the main design patterns used in this library?
+```
+
+```
+How does this library compare to [alternative library]?
+```
+
+## Feature Implementation
+
+When implementing new features:
+
+```
+I want to add [feature description] to this codebase. Please analyze the current structure and suggest the best approach to implement this feature while maintaining consistency with the existing code patterns.
+```
+
+**Example**:
+```
+I want to add user authentication with OAuth2 support to this Express.js application. Please analyze the current structure and suggest the best approach to implement this feature while maintaining consistency with the existing code patterns.
+```
+
+## Bug Investigation
+
+For debugging assistance:
+
+```
+I'm experiencing [describe the bug] in this codebase. Please analyze the code to identify potential causes and suggest fixes.
+```
+
+**Example**:
+```
+I'm experiencing memory leaks when processing large files in this Node.js application. Please analyze the code to identify potential causes and suggest fixes.
+```
+
+## Migration Planning
+
+When planning technology migrations:
+
+```
+I want to migrate this codebase from [current technology] to [target technology]. Please analyze the code and provide a step-by-step migration plan, highlighting potential challenges and compatibility issues.
+```
+
+**Example**:
+```
+I want to migrate this JavaScript codebase to TypeScript. Please analyze the code and provide a step-by-step migration plan, highlighting potential challenges and compatibility issues.
+```
+
+## Architecture Analysis
+
+For understanding system architecture:
+
+```
+Analyze the architecture of this codebase. Describe the main components, their responsibilities, and how they interact. Identify any architectural patterns being used and suggest improvements if applicable.
+```
+
+**Follow-up prompts**:
+```
+Create a diagram showing the system architecture and component relationships.
+```
+
+```
+What are the main dependencies between modules? Are there any circular dependencies?
+```
+
+## Code Comparison
+
+Comparing implementations:
+
+```
+Compare the implementation approaches in [component A] and [component B]. Which approach is better and why? Suggest how to standardize the approach across the codebase.
+```
+
+## Performance Analysis
+
+For performance optimization:
+
+```
+Analyze this codebase for performance optimization opportunities. Focus on:
+1. Algorithm efficiency
+2. Database query optimization
+3. Caching strategies
+4. Resource utilization
+
+Provide specific recommendations with code examples.
+```
+
+## Dependency Analysis
+
+Understanding dependencies:
+
+```
+Analyze all dependencies in this codebase. Identify:
+1. Outdated packages that should be updated
+2. Unused dependencies that can be removed
+3. Potential security vulnerabilities in dependencies
+4. Opportunities to reduce bundle size
+```
+
+## Accessibility Review
+
+For web applications:
+
+```
+Review this web application codebase for accessibility (a11y) compliance. Identify areas that don't meet WCAG 2.1 Level AA standards and provide specific fixes.
+```
+
+## API Design Review
+
+For API projects:
+
+```
+Review the API design in this codebase. Evaluate:
+1. RESTful conventions adherence
+2. Endpoint naming consistency
+3. Error handling patterns
+4. Response format consistency
+5. API versioning strategy
+
+Suggest improvements for better API design.
+```
+
+## Tips for Effective Prompts
+
+<Tip>
+**Be Specific**: Include specific goals, constraints, or areas of focus in your prompts.
+</Tip>
+
+<Tip>
+**Provide Context**: Mention the programming language, framework, or domain if it helps clarify your needs.
+</Tip>
+
+<Tip>
+**Iterative Approach**: Start with a broad prompt, then ask follow-up questions to drill down into specific areas.
+</Tip>
+
+<Tip>
+**Request Examples**: Ask the AI to provide code examples or demonstrations of suggested changes.
+</Tip>
+
+<Tip>
+**Set Priorities**: If you want multiple types of analysis, ask the AI to prioritize findings by importance or impact.
+</Tip>
+
+## Community Shared Prompts
+
+The Repomix community shares effective prompts and use cases in our [GitHub Discussion](https://github.com/yamadashy/repomix/discussions/154). Join the conversation to:
+
+- See which AI tools others are using with Repomix
+- Discover effective prompts from other users
+- Share your own successful prompts and experiences
+- Learn tips and tricks for better AI code analysis
+
+## Customizing Output for Better AI Results
+
+To get even better results from AI analysis, customize the Repomix output:
+
+### Add Custom Instructions
+
+Create an instruction file with context for the AI:
+
+```bash
+repomix --instruction-file-path instructions.txt
+```
+
+**Example instructions.txt**:
+```
+This is a Node.js microservice for processing payments.
+Key technologies: Express.js, PostgreSQL, Redis, Stripe API.
+Focus on security, PCI compliance, and error handling.
+```
+
+### Add Header Text
+
+Provide immediate context:
+
+```bash
+repomix --header-text "E-commerce checkout service - Focus on payment processing flow"
+```
+
+### Use Compression for Large Projects
+
+For large codebases, use compression to focus on structure:
+
+```bash
+repomix --compress
+```
+
+Then prompt:
+```
+This is a compressed representation of the codebase showing function signatures and class structures. Analyze the overall architecture and suggest improvements to the code organization.
+```

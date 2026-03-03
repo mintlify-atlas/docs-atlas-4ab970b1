@@ -1,0 +1,155 @@
+---
+title: Agent Skills
+description: Generate Claude Agent Skills format output for reusable codebase references
+---
+
+# Agent Skills Generation
+
+Repomix can generate [Claude Agent Skills](https://docs.anthropic.com/en/docs/claude-code/skills) format output, creating a structured Skills directory that can be used as a reusable codebase reference for AI assistants. This feature is particularly powerful when you want to reference implementations from remote repositories.
+
+## Basic Usage
+
+```bash
+# Generate Skills from local directory
+repomix --skill-generate
+
+# Generate with custom Skills name
+repomix --skill-generate my-project-reference
+
+# Generate from remote repository
+repomix --remote https://github.com/user/repo --skill-generate
+```
+
+## Interactive Installation
+
+When you run the command, Repomix prompts you to choose where to save the Skills:
+
+1. **Personal Skills** (`~/.claude/skills/`) - Available across all projects on your machine
+2. **Project Skills** (`.claude/skills/`) - Shared with your team via git
+
+## Non-Interactive Usage
+
+For CI pipelines and automation scripts, you can skip all interactive prompts using `--skill-output` and `--force`:
+
+```bash
+# Specify output directory directly
+repomix --skill-generate --skill-output ./my-skills
+
+# Skip overwrite confirmation with --force
+repomix --skill-generate --skill-output ./my-skills --force
+
+# Full non-interactive example
+repomix --remote user/repo --skill-generate my-skill --skill-output ./output --force
+```
+
+## Generated Structure
+
+The Skills are generated with the following structure:
+
+```text
+.claude/skills/<skill-name>/
+├── SKILL.md                 # Main Skills metadata & documentation
+└── references/
+    ├── summary.md           # Purpose, format, and statistics
+    ├── project-structure.md # Directory tree with line counts
+    ├── files.md             # All file contents (grep-friendly)
+    └── tech-stack.md        # Languages, frameworks, dependencies
+```
+
+## What's Included
+
+### SKILL.md
+
+Contains Skills metadata, file/line/token counts, overview, and usage instructions.
+
+### summary.md
+
+Explains the Skills' purpose, usage guidelines, and provides statistics breakdown by file type and language.
+
+### project-structure.md
+
+Directory tree with line counts per file for easy file discovery.
+
+### files.md
+
+All file contents with syntax highlighting headers, optimized for grep-friendly searching.
+
+### tech-stack.md
+
+Auto-detected tech stack from dependency files (`package.json`, `requirements.txt`, `Cargo.toml`, etc.).
+
+## Auto-Generated Skills Names
+
+If no name is provided, Repomix auto-generates one:
+
+```bash
+repomix src/ --skill-generate                # → repomix-reference-src
+repomix --remote user/repo --skill-generate  # → repomix-reference-repo
+repomix --skill-generate CustomName          # → custom-name (normalized to kebab-case)
+```
+
+## Integration with Repomix Features
+
+Skills generation respects all standard Repomix options:
+
+```bash
+# Generate Skills with file filtering
+repomix --skill-generate --include "src/**/*.ts" --ignore "**/*.test.ts"
+
+# Generate Skills with compression
+repomix --skill-generate --compress
+
+# Generate Skills from remote repository
+repomix --remote yamadashy/repomix --skill-generate
+```
+
+## Repomix Explorer Skill
+
+Repomix provides a ready-to-use **Repomix Explorer** skill that enables AI coding assistants to analyze and explore codebases using Repomix CLI. This skill is designed to work with various AI tools including Claude Code, Cursor, Codex, GitHub Copilot, and more.
+
+### Quick Install
+
+```bash
+npx add-skill yamadashy/repomix --skill repomix-explorer
+```
+
+This command installs the skill to your AI assistant's skills directory (e.g., `.claude/skills/`), making it immediately available.
+
+### What It Does
+
+Once installed, you can analyze codebases with natural language instructions.
+
+**Analyze remote repositories:**
+
+```text
+"What's the structure of this repo?
+https://github.com/facebook/react"
+```
+
+**Explore local codebases:**
+
+```text
+"What's in this project?
+~/projects/my-app"
+```
+
+This is useful not only for understanding codebases, but also when you want to implement features by referencing your other repositories.
+
+## Use Cases
+
+- **Reference implementations**: Keep structured references to example codebases
+- **Team knowledge sharing**: Share project insights through version-controlled Skills
+- **Cross-project learning**: Enable AI assistants to reference patterns from other projects
+- **Documentation**: Create searchable, AI-friendly project documentation
+
+## Command Line Options
+
+- `--skill-generate [name]`: Generate Claude Agent Skills format output to `.claude/skills/<name>/` directory (name auto-generated if omitted)
+- `--skill-output <path>`: Specify skill output directory path directly (skips location prompt)
+- `-f, --force`: Skip all confirmation prompts (e.g., skill directory overwrite)
+
+## Learn More
+
+- [Claude Agent Skills Documentation](https://docs.anthropic.com/en/docs/claude-code/skills)
+- [CLI Reference](/cli/commands)
+- [Configuration Guide](/configuration/basics)

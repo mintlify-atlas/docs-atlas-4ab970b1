@@ -1,0 +1,188 @@
+---
+title: Changelog
+description: Release history and recent changes to Repomix
+---
+
+# Changelog
+
+Stay up to date with the latest features, improvements, and bug fixes in Repomix.
+
+## Latest Release
+
+For the most recent changes and detailed release notes, visit:
+
+<Card title="GitHub Releases" icon="github" href="https://github.com/yamadashy/repomix/releases">
+  View all releases, release notes, and version history on GitHub
+</Card>
+
+## Recent Highlights
+
+### v1.12.0 - Performance Improvements
+
+**What's New**
+- Auto-detect remote URLs without `--remote` flag - pass GitHub URLs directly
+- Node.js module compile cache for ~10% faster startup time
+- Optimized file collection with UTF-8 fast path
+- Streaming tar.gz extraction for remote repositories
+- Smaller npm package (~50% reduction in size)
+
+**Bug Fixes**
+- Skip retry on archive extraction errors for faster feedback
+
+[View full release notes](https://github.com/yamadashy/repomix/releases/tag/v1.12.0)
+
+### Key Features by Version
+
+**v1.11.0** - Agent Skills & Enhanced Output
+- Agent Skills generation (`--skill-generate`)
+- Git commit history support (`--include-logs`)
+- Full directory structure option
+- Git-based file sorting
+
+**v1.10.0** - MCP Server Integration
+- Model Context Protocol (MCP) server support
+- AI assistant integration for Claude, Cursor, VS Code
+- File system read tools for MCP
+- Enhanced grep functionality
+
+**v1.9.0** - Browser Extension & JSON Output
+- Official Chrome and Firefox browser extensions
+- JSON output format support
+- Improved remote repository handling
+- Token count tree visualization
+
+**v1.8.0** - Code Compression
+- Tree-sitter based code compression
+- Intelligent code extraction
+- ~70% token reduction while preserving structure
+
+**v1.7.0** - Enhanced Configuration
+- TypeScript configuration file support
+- Dynamic configuration values
+- Improved configuration validation
+
+## Release Categories
+
+Repomix releases typically include:
+
+### Features
+- New functionality and capabilities
+- Integration with AI tools and platforms
+- Enhanced output formats and options
+
+### Improvements
+- Performance optimizations
+- Better error messages
+- Enhanced user experience
+- CLI improvements
+
+### Bug Fixes
+- Issue resolutions
+- Edge case handling
+- Compatibility fixes
+
+### Breaking Changes
+- Major version updates may include breaking changes
+- Migration guides provided when necessary
+
+## Staying Updated
+
+### Update to Latest Version
+
+```bash
+# Using npm
+npm update -g repomix
+
+# Using yarn
+yarn global upgrade repomix
+
+# Using bun
+bun update -g repomix
+
+# Using Homebrew
+brew upgrade repomix
+```
+
+### Always Use Latest with npx
+
+```bash
+npx repomix@latest
+```
+
+Using `npx` automatically fetches and runs the latest version without requiring manual updates.
+
+### Check Current Version
+
+```bash
+repomix --version
+```
+
+## Release Notifications
+
+Stay informed about new releases:
+
+<CardGroup cols={2}>
+  <Card title="Watch on GitHub" icon="star" href="https://github.com/yamadashy/repomix">
+    Click "Watch" → "Custom" → "Releases" to get notified of new releases
+  </Card>
+  
+  <Card title="Join Discord" icon="discord" href="https://discord.gg/wNYzTwZFku">
+    Get release announcements and discuss new features with the community
+  </Card>
+</CardGroup>
+
+## Version History
+
+For complete version history and detailed changelogs:
+
+- **GitHub Releases**: [github.com/yamadashy/repomix/releases](https://github.com/yamadashy/repomix/releases)
+- **npm Package**: [npmjs.com/package/repomix](https://www.npmjs.com/package/repomix)
+
+## Contributing to Releases
+
+Want to contribute to the next release?
+
+<Card title="Contributing Guide" icon="code-pull-request" href="https://github.com/yamadashy/repomix/blob/main/CONTRIBUTING.md">
+  Learn how to contribute features, bug fixes, and improvements
+</Card>
+
+## Semantic Versioning
+
+Repomix follows [Semantic Versioning](https://semver.org/):
+
+- **Major** (v2.0.0): Breaking changes
+- **Minor** (v1.1.0): New features, backwards compatible
+- **Patch** (v1.0.1): Bug fixes, backwards compatible
+
+## Deprecation Policy
+
+When features are deprecated:
+
+1. Deprecation warnings are added in minor releases
+2. Deprecated features continue to work for at least one major version
+3. Migration guides are provided
+4. Community feedback is considered before removal
+
+## Beta and Pre-release Versions
+
+Try cutting-edge features before official release:
+
+```bash
+# Install beta version
+npm install -g repomix@beta
+
+# Or use with npx
+npx repomix@beta
+```
+
+<Warning>
+Beta versions may contain bugs or unstable features. Use in production at your own risk.
+</Warning>
+
+## Feedback and Feature Requests
+
+Help shape future releases:
+
+- **Feature Requests**: [GitHub Discussions](https://github.com/yamadashy/repomix/discussions)
+- **Bug Reports**: [GitHub Issues](https://github.com/yamadashy/repomix/issues)
+- **Community Chat**: [Discord Server](https://discord.gg/wNYzTwZFku)

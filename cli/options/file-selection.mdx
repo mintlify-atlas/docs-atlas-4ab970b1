@@ -1,0 +1,363 @@
+---
+title: File Selection Options
+description: Include, ignore, and pattern matching options
+---
+
+File selection options control which files are included in or excluded from the pack.
+
+## Include Patterns
+
+<ParamField path="--include" type="string">
+  Include only files matching these glob patterns (comma-separated).
+
+  ```bash
+  # Single pattern
+  repomix --include "**/*.ts"
+
+  # Multiple patterns
+  repomix --include "src/**/*.js,**/*.md"
+
+  # Specific directories
+  repomix --include "src/**,tests/**"
+  ```
+
+  **Pattern syntax:**
+  - `*` - Matches any characters except `/`
+  - `**` - Matches any characters including `/`
+  - `?` - Matches single character
+  - `[abc]` - Matches any character in set
+  - `{a,b}` - Matches either pattern
+
+  **Examples:**
+  ```bash
+  # Only TypeScript files
+  repomix --include "**/*.ts"
+
+  # TypeScript and TSX
+  repomix --include "**/*.{ts,tsx}"
+
+  # Source and tests
+  repomix --include "src/**/*.ts,tests/**/*.ts"
+
+  # Specific files
+  repomix --include "README.md,package.json,src/**"
+  ```
+
+  **Note:** When using `--include`, only matched files are packed. Use `--include-full-directory-structure` to show complete tree.
+</ParamField>
+
+## Ignore Patterns
+
+<ParamField path="--ignore" alias="-i" type="string">
+  Additional patterns to exclude (comma-separated).
+
+  ```bash
+  # Single pattern
+  repomix --ignore "**/*.test.js"
+
+  # Multiple patterns
+  repomix --ignore "*.test.js,docs/**,*.log"
+
+  # Directories
+  repomix --ignore "tmp/**,cache/**,dist/**"
+  ```
+
+  **Examples:**
+  ```bash
+  # Ignore test files
+  repomix --ignore "**/*.test.ts,**/*.spec.ts"
+
+  # Ignore documentation
+  repomix --ignore "docs/**,*.md"
+
+  # Ignore build outputs
+  repomix --ignore "dist/**,build/**,*.min.js"
+
+  # Ignore specific files
+  repomix --ignore "package-lock.json,yarn.lock"
+  ```
+
+  **Note:** Patterns specified with `--ignore` are added to all other ignore sources (.gitignore, .repomixignore, default patterns).
+</ParamField>
+
+## Ignore Sources
+
+Repomix uses multiple sources for ignore patterns:
+
+### 1. Default Patterns
+
+Built-in patterns for common files/directories:
+
+**Directories:**
+- `node_modules/`
+- `.git/`
+- `dist/`, `build/`, `out/`
+- `.next/`, `.nuxt/`, `.cache/`
+- `coverage/`
+- And more...
+
+**Files:**
+- `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`
+- `.DS_Store`
+- `*.log`
+- And more...
+
+<ParamField path="--no-default-patterns" type="boolean">
+  Don't apply built-in ignore patterns.
+
+  ```bash
+  repomix --no-default-patterns
+  ```
+
+  **Use when:**
+  - Need to include `node_modules/`
+  - Want complete repository dump
+  - Custom ignore patterns only
+
+  **Example:**
+  ```bash
+  # Include everything except specific patterns
+  repomix --no-default-patterns --ignore "*.test.js"
+  ```
+</ParamField>
+
+### 2. .gitignore
+
+Respects `.gitignore` files by default.
+
+<ParamField path="--no-gitignore" type="boolean">
+  Don't use `.gitignore` rules for filtering files.
+
+  ```bash
+  repomix --no-gitignore
+  ```
+
+  **Use when:**
+  - Need files normally ignored by git
+  - `.gitignore` is overly restrictive
+  - Testing/debugging
+
+  **Example:**
+  ```bash
+  # Include build outputs ignored by git
+  repomix --no-gitignore --include "dist/**"
+  ```
+</ParamField>
+
+### 3. .ignore Files
+
+Respects `.ignore` and `.repomixignore` files.
+
+<ParamField path="--no-dot-ignore" type="boolean">
+  Don't use `.ignore` rules for filtering files.
+
+  ```bash
+  repomix --no-dot-ignore
+  ```
+
+  **Ignores:**
+  - `.ignore`
+  - `.repomixignore`
+
+  **Example:**
+  ```bash
+  repomix --no-dot-ignore
+  ```
+</ParamField>
+
+## Ignore Priority
+
+When multiple ignore sources exist, they're combined:
+
+1. Default patterns (unless `--no-default-patterns`)
+2. `.gitignore` (unless `--no-gitignore`)
+3. `.repomixignore` / `.ignore` (unless `--no-dot-ignore`)
+4. `--ignore` CLI patterns (always applied)
+5. `--include` patterns (overrides all - only includes matches)
+
+## Pattern Examples
+
+### Common Use Cases
+
+```bash
+# Only source code (no tests, configs)
+repomix --include "src/**/*.{ts,tsx,js,jsx}"
+
+# Everything except tests
+repomix --ignore "**/*.test.*,**/*.spec.*,**/__tests__/**"
+
+# Only documentation
+repomix --include "**/*.md,docs/**"
+
+# Only configuration files
+repomix --include "*.json,*.yaml,*.yml,*.toml,.*.rc"
+
+# Specific language
+repomix --include "**/*.py"
+
+# Multiple languages
+repomix --include "**/*.{ts,py,go,rs}"
+```
+
+### Advanced Patterns
+
+```bash
+# Source files in specific directories
+repomix --include "src/**/*.ts,lib/**/*.ts" --ignore "**/*.test.ts"
+
+# Everything except build artifacts
+repomix --ignore "dist/**,build/**,*.min.js,*.map"
+
+# Only modified files (with git)
+git diff --name-only | repomix --stdin
+
+# Only staged files
+git diff --cached --name-only | repomix --stdin
+```
+
+### Debugging Patterns
+
+```bash
+# See what files would be included
+repomix --include "src/**/*.ts" --verbose
+
+# Disable all filters
+repomix --no-default-patterns --no-gitignore --no-dot-ignore
+
+# Only custom filters
+repomix --no-default-patterns --no-gitignore --ignore "*.test.js"
+```
+
+## Creating .repomixignore
+
+Create a `.repomixignore` file in your repository root:
+
+```gitignore
+# .repomixignore
+
+# Generated files
+*.generated.ts
+auto-imports.d.ts
+
+# Large data files
+*.csv
+*.json
+data/**
+
+# Vendor code
+vendor/**
+third-party/**
+
+# Test fixtures
+**/__fixtures__/**
+**/__mocks__/**
+
+# Documentation builds
+docs/.vitepress/dist
+docs/.vitepress/cache
+```
+
+## Using .ignore
+
+You can also use `.ignore` (same format as `.gitignore`):
+
+```gitignore
+# .ignore
+
+# Temporary files
+*.tmp
+*.temp
+
+# Logs
+*.log
+logs/**
+```
+
+## Configuration File
+
+Ignore patterns can also be set in `repomix.config.json`:
+
+```json
+{
+  "ignore": {
+    "useGitignore": true,
+    "useDotIgnore": true,
+    "useDefaultPatterns": true,
+    "customPatterns": [
+      "**/*.test.ts",
+      "docs/**"
+    ]
+  },
+  "include": [
+    "src/**/*.ts",
+    "lib/**/*.ts"
+  ]
+}
+```
+
+## Examples
+
+### TypeScript Project
+
+```bash
+# Only source files
+repomix --include "src/**/*.ts,src/**/*.tsx"
+
+# Exclude tests
+repomix --include "src/**/*.ts" --ignore "**/*.test.ts,**/*.spec.ts"
+```
+
+### Monorepo
+
+```bash
+# Specific packages
+repomix packages/core packages/utils
+
+# With patterns
+repomix --include "packages/*/src/**/*.ts"
+```
+
+### Documentation
+
+```bash
+# All markdown files
+repomix --include "**/*.md,**/*.mdx"
+
+# Docs directory only
+repomix --include "docs/**"
+```
+
+### Changed Files Only
+
+```bash
+# Files changed in last commit
+git diff --name-only HEAD~1 | repomix --stdin
+
+# Files in current branch
+git diff --name-only main...HEAD | repomix --stdin
+
+# Uncommitted changes
+git ls-files -m | repomix --stdin
+```
+
+### CI/CD Integration
+
+```bash
+# Only production code
+repomix \
+  --include "src/**" \
+  --ignore "**/*.test.*,**/*.spec.*" \
+  --no-default-patterns \
+  --ignore "node_modules/**"
+```
+
+### Complete Control
+
+```bash
+# Explicit include/exclude
+repomix \
+  --no-default-patterns \
+  --no-gitignore \
+  --include "src/**/*.ts,lib/**/*.ts" \
+  --ignore "**/*.test.ts,**/*.generated.ts"
+```

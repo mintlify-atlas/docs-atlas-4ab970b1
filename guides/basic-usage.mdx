@@ -1,0 +1,393 @@
+---
+title: Basic Usage
+description: Common usage patterns, directory packing, and glob patterns for file selection
+---
+
+This guide covers fundamental Repomix usage patterns, from packing entire directories to using advanced file selection patterns.
+
+## Pack entire repository
+
+The simplest way to use Repomix is to run it without any arguments:
+
+```bash
+repomix
+```
+
+This generates `repomix-output.xml` in your current directory, containing your entire repository in an AI-friendly format.
+
+<Tip>
+Repomix automatically respects your `.gitignore`, `.ignore`, and `.repomixignore` files to exclude unnecessary files.
+</Tip>
+
+## Pack specific directories
+
+You can pack one or more specific directories:
+
+<CodeGroup>
+
+```bash Single directory
+repomix path/to/directory
+```
+
+```bash Multiple directories
+repomix src tests docs
+```
+
+```bash With absolute paths
+repomix /home/user/project/src
+```
+
+</CodeGroup>
+
+## Using glob patterns
+
+Glob patterns provide powerful file selection capabilities using the [fast-glob pattern syntax](https://github.com/mrmlnc/fast-glob#pattern-syntax).
+
+### Include specific file types
+
+<Steps>
+  <Step title="Include TypeScript files">
+    ```bash
+    repomix --include "src/**/*.ts"
+    ```
+    
+    This includes all TypeScript files in the `src/` directory and subdirectories.
+  </Step>
+  
+  <Step title="Include multiple patterns">
+    ```bash
+    repomix --include "src/**/*.ts,**/*.md"
+    ```
+    
+    Use commas to separate multiple patterns. This includes TypeScript files in `src/` and all Markdown files.
+  </Step>
+  
+  <Step title="Include multiple file extensions">
+    ```bash
+    repomix --include "**/*.{js,ts}"
+    ```
+    
+    This syntax includes both JavaScript and TypeScript files.
+  </Step>
+</Steps>
+
+### Exclude specific patterns
+
+The `--ignore` option adds exclusion patterns on top of your existing ignore files:
+
+<CodeGroup>
+
+```bash Exclude test files
+repomix --ignore "**/*.test.ts"
+```
+
+```bash Exclude multiple patterns
+repomix --ignore "**/*.log,tmp/,**/*.spec.js"
+```
+
+```bash Exclude directories
+repomix --ignore "node_modules/**,dist/**,build/**"
+```
+
+</CodeGroup>
+
+<Note>
+Ignore patterns are additive. Files matching `.gitignore`, `.ignore`, `.repomixignore`, built-in patterns, AND `--ignore` patterns will be excluded.
+</Note>
+
+### Combine include and exclude
+
+You can combine both for precise file selection:
+
+```bash
+repomix --include "src/**/*.ts,**/*.md" --ignore "**/*.test.ts,docs/"
+```
+
+This includes:
+- All TypeScript files in `src/`
+- All Markdown files
+
+But excludes:
+- Test files
+- The `docs/` directory
+
+## Common pattern examples
+
+<Tabs>
+  <Tab title="Source code only">
+    ```bash
+    # Include all source files, exclude tests and configs
+    repomix --include "src/**/*.{js,ts,jsx,tsx}" --ignore "**/*.test.*,**/*.spec.*"
+    ```
+  </Tab>
+  
+  <Tab title="Documentation only">
+    ```bash
+    # Include only documentation files
+    repomix --include "**/*.md,**/*.mdx,docs/**"
+    ```
+  </Tab>
+  
+  <Tab title="Configuration files">
+    ```bash
+    # Include only config files
+    repomix --include "*.{json,yml,yaml,toml,conf}"
+    ```
+  </Tab>
+  
+  <Tab title="Python project">
+    ```bash
+    # Include Python source, exclude tests and cache
+    repomix --include "**/*.py" --ignore "**/__pycache__/**,**/*.pyc,tests/**"
+    ```
+  </Tab>
+</Tabs>
+
+## Using stdin for file selection
+
+The `--stdin` option allows you to pipe file paths from other commands, providing ultimate flexibility:
+
+<Steps>
+  <Step title="Using find">
+    ```bash
+    find src -name "*.ts" -type f | repomix --stdin
+    ```
+    
+    Find all TypeScript files in `src/` and pack them.
+  </Step>
+  
+  <Step title="Using git ls-files">
+    ```bash
+    git ls-files "*.ts" | repomix --stdin
+    ```
+    
+    Pack only git-tracked TypeScript files.
+  </Step>
+  
+  <Step title="Using ripgrep">
+    ```bash
+    rg -l "TODO|FIXME" --type ts | repomix --stdin
+    ```
+    
+    Find and pack all TypeScript files containing TODO or FIXME comments.
+  </Step>
+  
+  <Step title="Using fzf for interactive selection">
+    ```bash
+    fzf -m | repomix --stdin
+    ```
+    
+    Interactively select files with fzf's multi-select interface, then pack them.
+  </Step>
+</Steps>
+
+### Advanced stdin examples
+
+<CodeGroup>
+
+```bash fd (find alternative)
+fd -e ts | repomix --stdin
+```
+
+```bash Files with specific content
+grep -l "API_KEY" **/*.ts | repomix --stdin
+```
+
+```bash From a file list
+cat file-list.txt | repomix --stdin
+```
+
+```bash Direct input
+echo -e "src/index.ts\nsrc/utils.ts" | repomix --stdin
+```
+
+```bash Interactive with find and fzf
+find . -name "*.ts" -type f | fzf -m | repomix --stdin
+```
+
+</CodeGroup>
+
+<Note>
+When using `--stdin`, file paths can be relative or absolute. Repomix automatically handles path resolution and deduplication. Files specified via stdin are still subject to ignore patterns.
+</Note>
+
+## Control ignore behavior
+
+You can customize which ignore files Repomix uses:
+
+<Tabs>
+  <Tab title="Disable .gitignore">
+    ```bash
+    repomix --no-gitignore
+    ```
+    
+    Don't use `.gitignore` rules for filtering files.
+  </Tab>
+  
+  <Tab title="Disable .ignore">
+    ```bash
+    repomix --no-dot-ignore
+    ```
+    
+    Don't use `.ignore` rules for filtering files.
+  </Tab>
+  
+  <Tab title="Disable default patterns">
+    ```bash
+    repomix --no-default-patterns
+    ```
+    
+    Don't apply built-in ignore patterns (node_modules, .git, build directories, etc.).
+  </Tab>
+  
+  <Tab title="Disable all ignores">
+    ```bash
+    repomix --no-gitignore --no-dot-ignore --no-default-patterns
+    ```
+    
+    Pack everything without any filtering (use with caution).
+  </Tab>
+</Tabs>
+
+## Output to different locations
+
+<Steps>
+  <Step title="Custom output file">
+    ```bash
+    repomix --output my-codebase.xml
+    ```
+    
+    Specify a custom output filename.
+  </Step>
+  
+  <Step title="Output to specific directory">
+    ```bash
+    repomix --output /tmp/output.xml
+    ```
+    
+    Save to a specific directory.
+  </Step>
+  
+  <Step title="Output to stdout">
+    ```bash
+    repomix --stdout > output.xml
+    ```
+    
+    Write to stdout and redirect to a file.
+  </Step>
+  
+  <Step title="Pipe to another command">
+    ```bash
+    repomix --stdout | llm "Please explain what this code does."
+    ```
+    
+    Use with CLI AI tools like [simonw/llm](https://github.com/simonw/llm).
+  </Step>
+</Steps>
+
+## Copy to clipboard
+
+Quickly get your packed output into the clipboard:
+
+```bash
+repomix --copy
+```
+
+After generation, the output is automatically copied to your system clipboard. Perfect for pasting directly into AI chat interfaces.
+
+<Tip>
+Combine `--copy` with other options:
+```bash
+repomix src --style markdown --compress --copy
+```
+</Tip>
+
+## Verify output
+
+After packing, Repomix displays useful metrics:
+
+```
+📦 Repomix v1.12.0
+
+✔ Repository files collected
+✔ Security check completed
+✔ File contents processed
+✔ Output file generated
+
+📊 Total Files: 42
+📊 Total Characters: 125,430
+📊 Total Tokens: 31,250
+
+✅ Output file: repomix-output.xml
+```
+
+Use `--verbose` for detailed processing information:
+
+```bash
+repomix --verbose
+```
+
+Or `--quiet` to suppress all output except errors:
+
+```bash
+repomix --quiet
+```
+
+## Real-world usage examples
+
+<Tabs>
+  <Tab title="Frontend application">
+    ```bash
+    # Pack React app source, exclude tests and node_modules
+    repomix src --include "**/*.{ts,tsx,css}" --ignore "**/*.test.*" --compress
+    ```
+  </Tab>
+  
+  <Tab title="Backend API">
+    ```bash
+    # Pack API routes and models
+    repomix --include "routes/**,models/**,**/*.{js,ts}" --ignore "**/*.spec.js"
+    ```
+  </Tab>
+  
+  <Tab title="Documentation site">
+    ```bash
+    # Pack docs with Markdown output
+    repomix docs --style markdown --include "**/*.{md,mdx}"
+    ```
+  </Tab>
+  
+  <Tab title="Monorepo package">
+    ```bash
+    # Pack specific package in monorepo
+    repomix packages/ui --include "src/**" --ignore "dist/**,*.test.*"
+    ```
+  </Tab>
+  
+  <Tab title="Quick code review">
+    ```bash
+    # Pack changed files from current branch
+    git diff --name-only main | repomix --stdin --copy
+    ```
+  </Tab>
+</Tabs>
+
+## What's next?
+
+<CardGroup cols={2}>
+  <Card title="Remote repositories" icon="cloud" href="/guides/remote-repositories">
+    Process GitHub repositories without cloning
+  </Card>
+  
+  <Card title="Compression" icon="file-zipper" href="/guides/compression">
+    Reduce token count with Tree-sitter compression
+  </Card>
+  
+  <Card title="Output formats" icon="file-code" href="/concepts/output-formats">
+    Learn about XML, Markdown, JSON, and plain text
+  </Card>
+  
+  <Card title="Configuration" icon="gear" href="/configuration/config-file">
+    Save patterns in a config file for reuse
+  </Card>
+</CardGroup>

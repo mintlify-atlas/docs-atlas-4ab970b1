@@ -1,0 +1,504 @@
+---
+title: Docker Usage
+description: Run Repomix in Docker containers for isolated and portable execution
+---
+
+Repomix is available as a Docker image, allowing you to run it in an isolated environment without installing Node.js or npm.
+
+## Docker image
+
+The official Repomix Docker image is available at:
+
+```
+ghcr.io/yamadashy/repomix
+```
+
+<Note>
+The Docker image is automatically updated with each Repomix release.
+</Note>
+
+## Basic usage
+
+Mount your project directory and run Repomix:
+
+```bash
+docker run -v .:/app -it --rm ghcr.io/yamadashy/repomix
+```
+
+This command:
+- `-v .:/app` - Mounts current directory to `/app` in the container
+- `-it` - Runs interactively with a terminal
+- `--rm` - Removes container after execution
+- `ghcr.io/yamadashy/repomix` - Uses the official image
+
+## Pack specific directory
+
+Mount your project and specify a directory:
+
+```bash
+docker run -v .:/app -it --rm ghcr.io/yamadashy/repomix path/to/directory
+```
+
+<CodeGroup>
+
+```bash Pack src directory
+docker run -v .:/app -it --rm ghcr.io/yamadashy/repomix src
+```
+
+```bash Pack multiple directories
+docker run -v .:/app -it --rm ghcr.io/yamadashy/repomix src tests docs
+```
+
+</CodeGroup>
+
+## Use command-line options
+
+All Repomix CLI options work with Docker:
+
+<Tabs>
+  <Tab title="Compression">
+    ```bash
+    docker run -v .:/app -it --rm ghcr.io/yamadashy/repomix --compress
+    ```
+  </Tab>
+  
+  <Tab title="Output format">
+    ```bash
+    docker run -v .:/app -it --rm ghcr.io/yamadashy/repomix --style markdown
+    ```
+  </Tab>
+  
+  <Tab title="Include patterns">
+    ```bash
+    docker run -v .:/app -it --rm ghcr.io/yamadashy/repomix --include "src/**/*.ts"
+    ```
+  </Tab>
+  
+  <Tab title="Ignore patterns">
+    ```bash
+    docker run -v .:/app -it --rm ghcr.io/yamadashy/repomix --ignore "**/*.test.ts"
+    ```
+  </Tab>
+  
+  <Tab title="Remove comments">
+    ```bash
+    docker run -v .:/app -it --rm ghcr.io/yamadashy/repomix --remove-comments --remove-empty-lines
+    ```
+  </Tab>
+</Tabs>
+
+## Process remote repositories
+
+You don't need to mount a directory for remote repositories:
+
+```bash
+docker run -v ./output:/app -it --rm ghcr.io/yamadashy/repomix --remote https://github.com/yamadashy/repomix
+```
+
+<Steps>
+  <Step title="Create output directory">
+    ```bash
+    mkdir output
+    ```
+  </Step>
+  
+  <Step title="Run with remote repository">
+    ```bash
+    docker run -v ./output:/app -it --rm ghcr.io/yamadashy/repomix --remote yamadashy/repomix
+    ```
+    
+    The packed output will be saved in `./output/repomix-output.xml`.
+  </Step>
+  
+  <Step title="Access the output">
+    ```bash
+    ls ./output/
+    # repomix-output.xml
+    ```
+  </Step>
+</Steps>
+
+### Remote repository examples
+
+<CodeGroup>
+
+```bash GitHub shorthand
+docker run -v ./output:/app -it --rm ghcr.io/yamadashy/repomix --remote yamadashy/repomix
+```
+
+```bash Specific branch
+docker run -v ./output:/app -it --rm ghcr.io/yamadashy/repomix --remote yamadashy/repomix --remote-branch main
+```
+
+```bash With compression
+docker run -v ./output:/app -it --rm ghcr.io/yamadashy/repomix --remote yamadashy/repomix --compress
+```
+
+```bash Markdown output
+docker run -v ./output:/app -it --rm ghcr.io/yamadashy/repomix --remote yamadashy/repomix --style markdown
+```
+
+</CodeGroup>
+
+## Custom output location
+
+Mount a specific output directory:
+
+```bash
+# Mount project to /app, output saves there
+docker run -v .:/app -it --rm ghcr.io/yamadashy/repomix
+
+# Or mount to a different output directory
+docker run -v .:/app -v /tmp/output:/output -it --rm ghcr.io/yamadashy/repomix --output /output/result.xml
+```
+
+## Use with configuration file
+
+If you have a `repomix.config.json` in your project:
+
+```bash
+docker run -v .:/app -it --rm ghcr.io/yamadashy/repomix
+```
+
+Repomix automatically detects and uses the config file.
+
+For custom config location:
+
+```bash
+docker run -v .:/app -it --rm ghcr.io/yamadashy/repomix --config /app/custom-config.json
+```
+
+## MCP server mode
+
+Run Repomix as an MCP server in Docker:
+
+```bash
+docker run -i --rm ghcr.io/yamadashy/repomix --mcp
+```
+
+<Note>
+The `-i` flag is required for MCP mode to maintain an interactive stdin connection.
+</Note>
+
+### MCP server configuration
+
+Add to your MCP client config (e.g., `claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "repomix-docker": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "ghcr.io/yamadashy/repomix",
+        "--mcp"
+      ]
+    }
+  }
+}
+```
+
+See the [MCP Server integration guide](/integrations/mcp-server) for more details.
+
+## Docker Compose
+
+For more complex setups, use Docker Compose:
+
+```yaml docker-compose.yml
+version: '3.8'
+
+services:
+  repomix:
+    image: ghcr.io/yamadashy/repomix
+    volumes:
+      - .:/app
+    command: --compress --style markdown
+```
+
+Run with:
+
+```bash
+docker-compose run --rm repomix
+```
+
+### Advanced Compose example
+
+```yaml docker-compose.yml
+version: '3.8'
+
+services:
+  repomix:
+    image: ghcr.io/yamadashy/repomix
+    volumes:
+      - ./src:/app/src
+      - ./output:/app/output
+    environment:
+      - NODE_ENV=production
+    command: >
+      --include "src/**/*.ts"
+      --ignore "**/*.test.ts"
+      --compress
+      --output /app/output/codebase.xml
+```
+
+Run:
+
+```bash
+docker-compose run --rm repomix
+```
+
+## Why use Docker?
+
+<Tabs>
+  <Tab title="No installation">
+    Run Repomix without installing Node.js or npm:
+    
+    ```bash
+    # No npm install needed
+    docker run -v .:/app -it --rm ghcr.io/yamadashy/repomix
+    ```
+    
+    Perfect for CI/CD environments or servers without Node.js.
+  </Tab>
+  
+  <Tab title="Isolation">
+    Keep Repomix isolated from your system:
+    
+    ```bash
+    # Runs in isolated container
+    docker run -v .:/app -it --rm ghcr.io/yamadashy/repomix
+    ```
+    
+    No global packages or version conflicts.
+  </Tab>
+  
+  <Tab title="Consistency">
+    Ensure consistent behavior across environments:
+    
+    ```bash
+    # Same version everywhere
+    docker run -v .:/app -it --rm ghcr.io/yamadashy/repomix
+    ```
+    
+    Works identically on macOS, Linux, Windows.
+  </Tab>
+  
+  <Tab title="CI/CD integration">
+    Easy integration in automated pipelines:
+    
+    ```yaml
+    # .github/workflows/repomix.yml
+    steps:
+      - uses: actions/checkout@v3
+      - name: Pack repository
+        run: docker run -v .:/app ghcr.io/yamadashy/repomix --compress
+    ```
+  </Tab>
+</Tabs>
+
+## CI/CD examples
+
+<Tabs>
+  <Tab title="GitHub Actions">
+    ```yaml .github/workflows/pack.yml
+    name: Pack Repository
+    on: [push]
+    
+    jobs:
+      pack:
+        runs-on: ubuntu-latest
+        steps:
+          - uses: actions/checkout@v3
+          
+          - name: Pack with Repomix
+            run: |
+              docker run -v ${{ github.workspace }}:/app \
+                ghcr.io/yamadashy/repomix \
+                --compress \
+                --output /app/packed-output.xml
+          
+          - name: Upload artifact
+            uses: actions/upload-artifact@v3
+            with:
+              name: packed-codebase
+              path: packed-output.xml
+    ```
+  </Tab>
+  
+  <Tab title="GitLab CI">
+    ```yaml .gitlab-ci.yml
+    pack:
+      image: docker:latest
+      services:
+        - docker:dind
+      script:
+        - docker run -v $CI_PROJECT_DIR:/app 
+            ghcr.io/yamadashy/repomix 
+            --compress 
+            --output /app/packed-output.xml
+      artifacts:
+        paths:
+          - packed-output.xml
+    ```
+  </Tab>
+  
+  <Tab title="CircleCI">
+    ```yaml .circleci/config.yml
+    version: 2.1
+    
+    jobs:
+      pack:
+        docker:
+          - image: docker:latest
+        steps:
+          - checkout
+          - setup_remote_docker
+          - run:
+              name: Pack repository
+              command: |
+                docker run -v $(pwd):/app \
+                  ghcr.io/yamadashy/repomix \
+                  --compress
+          - store_artifacts:
+              path: repomix-output.xml
+    ```
+  </Tab>
+  
+  <Tab title="Jenkins">
+    ```groovy Jenkinsfile
+    pipeline {
+      agent any
+      
+      stages {
+        stage('Pack') {
+          steps {
+            sh '''
+              docker run -v ${WORKSPACE}:/app \
+                ghcr.io/yamadashy/repomix \
+                --compress \
+                --output /app/packed-output.xml
+            '''
+          }
+        }
+        stage('Archive') {
+          steps {
+            archiveArtifacts artifacts: 'packed-output.xml'
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Permission denied when writing output">
+    **Problem:** Docker container can't write to mounted directory.
+    
+    **Solution:** Ensure the mounted directory has proper permissions:
+    
+    ```bash
+    # Option 1: Make directory writable
+    chmod -R 777 ./output
+    
+    # Option 2: Run with user ID
+    docker run -v .:/app -u $(id -u):$(id -g) -it --rm ghcr.io/yamadashy/repomix
+    ```
+  </Accordion>
+  
+  <Accordion title="Output file not found after running">
+    **Problem:** Output file not visible on host.
+    
+    **Solution:** Check mount path and output path:
+    
+    ```bash
+    # Ensure mount path is correct
+    docker run -v .:/app -it --rm ghcr.io/yamadashy/repomix --verbose
+    
+    # Check where output was written
+    ls -la ./
+    ```
+  </Accordion>
+  
+  <Accordion title="Docker image pull fails">
+    **Problem:** Can't pull the image.
+    
+    **Solution:** Ensure you have internet connection and try:
+    
+    ```bash
+    # Pull image explicitly
+    docker pull ghcr.io/yamadashy/repomix
+    
+    # Then run
+    docker run -v .:/app -it --rm ghcr.io/yamadashy/repomix
+    ```
+  </Accordion>
+  
+  <Accordion title="Container exits immediately">
+    **Problem:** Container starts and stops without output.
+    
+    **Solution:** Check logs and ensure proper mount:
+    
+    ```bash
+    # Run with verbose output
+    docker run -v .:/app -it --rm ghcr.io/yamadashy/repomix --verbose
+    
+    # Verify mount is correct
+    docker run -v .:/app -it --rm ghcr.io/yamadashy/repomix ls -la /app
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Performance considerations
+
+<Note>
+Docker adds a small overhead compared to native execution:
+
+- **Startup time**: +1-2 seconds (image load and container start)
+- **Execution time**: Similar to native (negligible difference)
+- **File I/O**: Slightly slower on some systems (especially macOS)
+
+For large repositories, the difference is minimal compared to processing time.
+</Note>
+
+## Alternative: Shell alias
+
+Create a shell alias for convenience:
+
+```bash
+# Add to ~/.bashrc or ~/.zshrc
+alias repomix='docker run -v .:/app -it --rm ghcr.io/yamadashy/repomix'
+```
+
+Then use like native command:
+
+```bash
+repomix --compress
+repomix --remote yamadashy/repomix
+repomix src --style markdown
+```
+
+## What's next?
+
+<CardGroup cols={2}>
+  <Card title="MCP Server" icon="server" href="/integrations/mcp-server">
+    Run Repomix as MCP server with Docker
+  </Card>
+  
+  <Card title="Remote repositories" icon="cloud" href="/guides/remote-repositories">
+    Process GitHub repos without cloning
+  </Card>
+  
+  <Card title="CI/CD integration" icon="code-branch" href="/advanced/programmatic-api">
+    Automate packing in your pipeline
+  </Card>
+  
+  <Card title="Configuration" icon="gear" href="/configuration/config-file">
+    Use config files with Docker
+  </Card>
+</CardGroup>

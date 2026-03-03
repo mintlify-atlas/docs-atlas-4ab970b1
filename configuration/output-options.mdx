@@ -1,0 +1,634 @@
+---
+title: Output Options
+description: Customize Repomix output format, style, and content with comprehensive configuration options
+---
+
+Repomix provides extensive options to customize the generated output.
+
+## Output Styles
+
+Repomix supports four output formats:
+
+<ParamField path="output.style" type="'xml' | 'markdown' | 'json' | 'plain'" default="xml">
+  Output format style
+</ParamField>
+
+### XML Format
+
+```json
+{
+  "output": {
+    "style": "xml",
+    "filePath": "output.xml"
+  }
+}
+```
+
+**Best for:**
+- Claude and other LLMs that prefer structured formats
+- Preserving file structure and metadata
+- Large codebases
+
+**Example output:**
+```xml
+<file path="src/index.ts">
+<content>
+export function hello() {
+  return "Hello, world!";
+}
+</content>
+</file>
+```
+
+### Markdown Format
+
+```json
+{
+  "output": {
+    "style": "markdown",
+    "filePath": "output.md"
+  }
+}
+```
+
+**Best for:**
+- Human readability
+- Documentation generation
+- GitHub/GitLab display
+- ChatGPT and GPT-4
+
+**Example output:**
+````markdown
+# src/index.ts
+```typescript
+export function hello() {
+  return "Hello, world!";
+}
+```
+````
+
+### JSON Format
+
+```json
+{
+  "output": {
+    "style": "json",
+    "filePath": "output.json"
+  }
+}
+```
+
+**Best for:**
+- Programmatic processing
+- API consumption
+- Integration with other tools
+
+**Example output:**
+```json
+{
+  "files": [
+    {
+      "path": "src/index.ts",
+      "content": "export function hello() {\n  return \"Hello, world!\";\n}"
+    }
+  ]
+}
+```
+
+### Plain Text Format
+
+```json
+{
+  "output": {
+    "style": "plain",
+    "filePath": "output.txt"
+  }
+}
+```
+
+**Best for:**
+- Simple text processing
+- Minimal formatting
+- Legacy systems
+
+## File Path
+
+<ParamField path="output.filePath" type="string" default="repomix-output.xml">
+  Output file path (relative or absolute)
+</ParamField>
+
+```json
+{
+  "output": {
+    "filePath": "dist/codebase.xml"
+  }
+}
+```
+
+The extension automatically adjusts based on `style` unless explicitly set:
+
+| Style | Default Path |
+|-------|-------------|
+| `xml` | `repomix-output.xml` |
+| `markdown` | `repomix-output.md` |
+| `json` | `repomix-output.json` |
+| `plain` | `repomix-output.txt` |
+
+## Content Sections
+
+Control which sections appear in the output:
+
+<ParamField path="output.fileSummary" type="boolean" default="true">
+  Include file summary with token counts and file statistics
+</ParamField>
+
+<ParamField path="output.directoryStructure" type="boolean" default="true">
+  Include directory tree structure
+</ParamField>
+
+<ParamField path="output.files" type="boolean" default="true">
+  Include file contents
+</ParamField>
+
+```json
+{
+  "output": {
+    "fileSummary": true,
+    "directoryStructure": true,
+    "files": true
+  }
+}
+```
+
+### File Summary Example
+
+```
+Total Files: 42
+Total Characters: 125,432
+Total Tokens: 28,945
+
+Top 5 Files by Token Count:
+1. src/main.ts (3,245 tokens)
+2. src/utils/helpers.ts (2,891 tokens)
+3. src/components/App.tsx (2,456 tokens)
+```
+
+### Directory Structure Example
+
+```
+src/
+├── components/
+│   ├── App.tsx
+│   └── Button.tsx
+├── utils/
+│   └── helpers.ts
+└── index.ts
+```
+
+## Content Processing
+
+### Remove Comments
+
+<ParamField path="output.removeComments" type="boolean" default="false">
+  Remove code comments from output using Tree-sitter
+</ParamField>
+
+```json
+{
+  "output": {
+    "removeComments": true
+  }
+}
+```
+
+**Before:**
+```typescript
+// This is a helper function
+export function add(a: number, b: number) {
+  return a + b; // Return sum
+}
+```
+
+**After:**
+```typescript
+export function add(a: number, b: number) {
+  return a + b;
+}
+```
+
+### Remove Empty Lines
+
+<ParamField path="output.removeEmptyLines" type="boolean" default="false">
+  Remove empty lines from file contents
+</ParamField>
+
+```json
+{
+  "output": {
+    "removeEmptyLines": true
+  }
+}
+```
+
+### Show Line Numbers
+
+<ParamField path="output.showLineNumbers" type="boolean" default="false">
+  Add line numbers to file contents
+</ParamField>
+
+```json
+{
+  "output": {
+    "showLineNumbers": true
+  }
+}
+```
+
+**Example:**
+```typescript
+1 export function hello() {
+2   return "Hello, world!";
+3 }
+```
+
+### Truncate Base64
+
+<ParamField path="output.truncateBase64" type="boolean" default="false">
+  Truncate base64 encoded content to reduce output size
+</ParamField>
+
+```json
+{
+  "output": {
+    "truncateBase64": true
+  }
+}
+```
+
+## Header and Instructions
+
+### Custom Header Text
+
+<ParamField path="output.headerText" type="string" optional>
+  Custom text to display at the top of the output
+</ParamField>
+
+```json
+{
+  "output": {
+    "headerText": "MyApp Codebase\n\nThis is the complete source code for MyApp.\nGenerated on 2024-03-15"
+  }
+}
+```
+
+### Instruction File
+
+<ParamField path="output.instructionFilePath" type="string" optional>
+  Path to a file containing instructions to include in output
+</ParamField>
+
+```json
+{
+  "output": {
+    "instructionFilePath": "ai-instructions.md"
+  }
+}
+```
+
+Create `ai-instructions.md`:
+```markdown
+# Instructions for AI
+
+When analyzing this codebase:
+1. Focus on the src/ directory
+2. Look for TypeScript patterns
+3. Identify potential improvements
+```
+
+## Directory Options
+
+<ParamField path="output.includeEmptyDirectories" type="boolean" optional>
+  Include empty directories in the directory structure
+</ParamField>
+
+<ParamField path="output.includeFullDirectoryStructure" type="boolean" default="false">
+  Show all directories in tree, not just those containing included files
+</ParamField>
+
+```json
+{
+  "output": {
+    "includeEmptyDirectories": true,
+    "includeFullDirectoryStructure": false
+  }
+}
+```
+
+## Top Files Summary
+
+<ParamField path="output.topFilesLength" type="number" default="5">
+  Number of files to show in the "top files by token count" summary
+</ParamField>
+
+```json
+{
+  "output": {
+    "topFilesLength": 10
+  }
+}
+```
+
+## Advanced Options
+
+### Split Output
+
+<ParamField path="output.splitOutput" type="number" optional>
+  Split output into multiple files when size exceeds this value (in bytes)
+</ParamField>
+
+```json
+{
+  "output": {
+    "splitOutput": 10485760  // 10MB
+  }
+}
+```
+
+Generates:
+- `output-1.xml`
+- `output-2.xml`
+- `output-3.xml`
+
+### Copy to Clipboard
+
+<ParamField path="output.copyToClipboard" type="boolean" default="false">
+  Automatically copy output to clipboard
+</ParamField>
+
+```json
+{
+  "output": {
+    "copyToClipboard": true
+  }
+}
+```
+
+### Compress Output
+
+<ParamField path="output.compress" type="boolean" default="false">
+  Compress output using gzip
+</ParamField>
+
+```json
+{
+  "output": {
+    "compress": true
+  }
+}
+```
+
+Generates `output.xml.gz` instead of `output.xml`.
+
+### Parsable Style
+
+<ParamField path="output.parsableStyle" type="boolean" default="false">
+  Use parsable output format without ANSI colors or progress indicators
+</ParamField>
+
+```json
+{
+  "output": {
+    "parsableStyle": true
+  }
+}
+```
+
+Useful for:
+- CI/CD pipelines
+- Automated processing
+- Logging systems
+
+## Git Integration
+
+### Sort by Changes
+
+<ParamField path="output.git.sortByChanges" type="boolean" default="true">
+  Sort files by git changes (most frequently changed files first)
+</ParamField>
+
+<ParamField path="output.git.sortByChangesMaxCommits" type="number" default="100">
+  Maximum number of commits to analyze for change frequency
+</ParamField>
+
+```json
+{
+  "output": {
+    "git": {
+      "sortByChanges": true,
+      "sortByChangesMaxCommits": 200
+    }
+  }
+}
+```
+
+### Include Git Diffs
+
+<ParamField path="output.git.includeDiffs" type="boolean" default="false">
+  Include git diffs in the output
+</ParamField>
+
+```json
+{
+  "output": {
+    "git": {
+      "includeDiffs": true
+    }
+  }
+}
+```
+
+### Include Git Logs
+
+<ParamField path="output.git.includeLogs" type="boolean" default="false">
+  Include git commit logs in the output
+</ParamField>
+
+<ParamField path="output.git.includeLogsCount" type="number" default="50">
+  Number of git log entries to include
+</ParamField>
+
+```json
+{
+  "output": {
+    "git": {
+      "includeLogs": true,
+      "includeLogsCount": 100
+    }
+  }
+}
+```
+
+## Token Count Tree
+
+<ParamField path="output.tokenCountTree" type="boolean | number | string" default="false">
+  Display token count as a tree structure
+  
+  - `false` - Disable token count tree
+  - `true` - Show full tree
+  - `number` - Maximum depth to display
+  - `string` - Minimum token count threshold (e.g., "1000", "50000")
+</ParamField>
+
+```json
+{
+  "output": {
+    "tokenCountTree": 50000  // Show directories with >50k tokens
+  }
+}
+```
+
+**Example output:**
+```
+Token Count Tree:
+src/ (125,432 tokens)
+├── components/ (45,678 tokens)
+├── utils/ (23,456 tokens)
+└── services/ (56,298 tokens)
+```
+
+## CLI Overrides
+
+All output options can be overridden via CLI:
+
+```bash
+# Set output style
+repomix --style markdown
+
+# Set output path
+repomix --output dist/codebase.md
+
+# Remove comments and empty lines
+repomix --remove-comments --remove-empty-lines
+
+# Show line numbers
+repomix --output-show-line-numbers
+
+# Copy to clipboard
+repomix --copy
+
+# Include git logs
+repomix --include-logs --include-logs-count 100
+```
+
+## Complete Example
+
+```json repomix.config.json
+{
+  "output": {
+    "filePath": "ai-ready-codebase.md",
+    "style": "markdown",
+    "parsableStyle": false,
+    "headerText": "MyApp Codebase - Generated for AI Analysis",
+    "instructionFilePath": "ai-instructions.md",
+    
+    "fileSummary": true,
+    "directoryStructure": true,
+    "files": true,
+    
+    "removeComments": true,
+    "removeEmptyLines": true,
+    "showLineNumbers": true,
+    "truncateBase64": true,
+    
+    "topFilesLength": 10,
+    "includeEmptyDirectories": false,
+    "includeFullDirectoryStructure": false,
+    
+    "copyToClipboard": false,
+    "compress": false,
+    
+    "tokenCountTree": 50000,
+    
+    "git": {
+      "sortByChanges": true,
+      "sortByChangesMaxCommits": 100,
+      "includeDiffs": false,
+      "includeLogs": true,
+      "includeLogsCount": 50
+    }
+  }
+}
+```
+
+## Use Cases
+
+### AI Code Review
+
+```json
+{
+  "output": {
+    "style": "markdown",
+    "removeComments": false,  // Keep comments for context
+    "showLineNumbers": true,
+    "git": {
+      "sortByChanges": true,  // Prioritize frequently changed files
+      "includeDiffs": true
+    }
+  }
+}
+```
+
+### Documentation Generation
+
+```json
+{
+  "output": {
+    "style": "markdown",
+    "removeComments": false,
+    "removeEmptyLines": false,
+    "directoryStructure": true,
+    "fileSummary": false
+  }
+}
+```
+
+### Minimal Token Usage
+
+```json
+{
+  "output": {
+    "style": "plain",
+    "removeComments": true,
+    "removeEmptyLines": true,
+    "fileSummary": false,
+    "directoryStructure": false
+  }
+}
+```
+
+### Code Migration
+
+```json
+{
+  "output": {
+    "style": "json",
+    "showLineNumbers": true,
+    "git": {
+      "includeLogs": true,
+      "includeLogsCount": 200
+    }
+  }
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="File Patterns" icon="filter" href="/configuration/file-patterns">
+    Configure which files to include
+  </Card>
+  
+  <Card title="CLI Reference" icon="terminal" href="/cli/options">
+    Command-line options
+  </Card>
+</CardGroup>

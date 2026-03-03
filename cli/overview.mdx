@@ -1,0 +1,133 @@
+---
+title: CLI Overview
+description: Complete command-line interface reference for Repomix
+---
+
+Repomix provides a powerful command-line interface to pack your repository into a single AI-friendly file.
+
+## Basic Syntax
+
+```bash
+repomix [directories...] [options]
+```
+
+## Quick Examples
+
+```bash
+# Pack current directory
+repomix
+
+# Pack specific directories
+repomix src tests
+
+# Pack with custom output
+repomix --output my-output.xml
+
+# Pack to stdout
+repomix --stdout
+
+# Pack remote repository
+repomix --remote https://github.com/user/repo
+
+# Pack with specific format
+repomix --style markdown
+```
+
+## Commands
+
+Repomix supports several operational modes:
+
+### Default Mode (Pack)
+
+The default operation packs the specified directories:
+
+```bash
+repomix [directories...] [options]
+```
+
+If no directories are specified, the current directory (`.`) is used.
+
+### Initialize Configuration
+
+Create a new configuration file:
+
+```bash
+repomix --init
+```
+
+See [init command](/cli/init) for details.
+
+### Remote Repository
+
+Process a remote Git repository:
+
+```bash
+repomix --remote <url>
+```
+
+See [remote command](/cli/remote) for details.
+
+### MCP Server Mode
+
+Run as a Model Context Protocol server:
+
+```bash
+repomix --mcp
+```
+
+See [MCP mode](/cli/mcp) for details.
+
+## Option Categories
+
+Options are organized into the following groups:
+
+- **[Basic Options](/cli/options/basic)** - Version info, logging level
+- **[Output Options](/cli/options/output)** - Format, styling, and content control
+- **[File Selection](/cli/options/file-selection)** - Include/exclude patterns
+- **[Security Options](/cli/options/security)** - Security scanning controls
+- **[Token Counting](/cli/options/token-counting)** - Token counting and encoding
+
+## Common Workflows
+
+### Pack to Clipboard
+
+```bash
+repomix --copy
+```
+
+### Pack without Comments
+
+```bash
+repomix --remove-comments --remove-empty-lines
+```
+
+### Pack Only Source Files
+
+```bash
+repomix --include "src/**/*.ts,src/**/*.js"
+```
+
+### Pack with Custom Config
+
+```bash
+repomix --config ./my-config.json
+```
+
+### Pack and Split into Chunks
+
+```bash
+repomix --split-output 2mb
+```
+
+## Exit Codes
+
+- `0` - Success
+- `1` - Error occurred during execution
+
+## Getting Help
+
+For the most up-to-date help, run:
+
+```bash
+repomix --help
+```

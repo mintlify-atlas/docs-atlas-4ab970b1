@@ -1,0 +1,205 @@
+---
+title: Frequently Asked Questions
+description: Common questions and answers about Repomix
+---
+
+# Frequently Asked Questions
+
+Find answers to common questions about Repomix usage, features, and troubleshooting.
+
+<AccordionGroup>
+  <Accordion title="What is Repomix?">
+    Repomix is a powerful tool that packs your entire repository into a single, AI-friendly file. It's perfect for when you need to feed your codebase to Large Language Models (LLMs) or other AI tools like Claude, ChatGPT, DeepSeek, Perplexity, Gemini, Gemma, Llama, Grok, and more.
+  </Accordion>
+
+  <Accordion title="Which AI tools work with Repomix?">
+    Repomix works with all major AI tools including:
+    - Claude (Anthropic)
+    - ChatGPT (OpenAI)
+    - DeepSeek
+    - Perplexity
+    - Google Gemini
+    - Meta Llama
+    - Grok (xAI)
+    - And many more LLM-based tools
+
+    The output is designed to be universally compatible with any AI system that can process text input.
+  </Accordion>
+
+  <Accordion title="What output formats does Repomix support?">
+    Repomix supports four output formats:
+    - **XML** (default) - Structured format with hierarchical tags, optimized for AI comprehension
+    - **Markdown** - Clean, readable format with code blocks
+    - **JSON** - Programmatic format ideal for API integration and data processing
+    - **Plain Text** - Simple text format with clear separators
+
+    You can specify the format using the `--style` option: `repomix --style markdown`
+  </Accordion>
+
+  <Accordion title="How do I exclude certain files or directories?">
+    Repomix provides multiple ways to exclude files:
+
+    1. **Automatic exclusion**: Respects `.gitignore`, `.ignore`, and `.repomixignore` files
+    2. **Command line**: Use `--ignore` option:
+       ```bash
+       repomix --ignore "**/*.log,tmp/"
+       ```
+    3. **Configuration file**: Add patterns to `repomix.config.json`:
+       ```json
+       {
+         "ignore": {
+           "customPatterns": ["**/node_modules/**", "**/dist/**"]
+         }
+       }
+       ```
+    4. **Default patterns**: Built-in exclusions for common directories like `node_modules`, `.git`, `build`, etc.
+  </Accordion>
+
+  <Accordion title="What is the --compress option?">
+    The `--compress` option uses Tree-sitter to extract essential code signatures and structure while removing implementation details. This can reduce token usage by approximately 70% while preserving semantic meaning.
+
+    Example:
+    ```bash
+    repomix --compress
+    ```
+
+    This is particularly useful for large codebases where you want to stay within AI context limits while maintaining code structure information.
+  </Accordion>
+
+  <Accordion title="Can I process remote repositories?">
+    Yes! Repomix supports processing remote Git repositories without manual cloning:
+
+    ```bash
+    # Full GitHub URL
+    repomix --remote https://github.com/yamadashy/repomix
+
+    # GitHub shorthand
+    repomix --remote yamadashy/repomix
+
+    # Specific branch
+    repomix --remote https://github.com/user/repo --remote-branch main
+
+    # Specific commit
+    repomix --remote https://github.com/user/repo --remote-branch 935b695
+    ```
+  </Accordion>
+
+  <Accordion title="How does token counting work?">
+    Repomix uses Tiktoken to count tokens for each file and the entire repository. This helps you understand if your packed output will fit within AI context limits.
+
+    - Default encoding: `o200k_base` (GPT-4o)
+    - Other supported encodings: `cl100k_base` (GPT-3.5/4), and more
+    - Change encoding: `--token-count-encoding cl100k_base`
+
+    You can also visualize token distribution:
+    ```bash
+    repomix --token-count-tree
+    ```
+  </Accordion>
+
+  <Accordion title="What is the maximum file size Repomix can process?">
+    By default, Repomix skips files larger than 50MB. You can configure this limit in `repomix.config.json`:
+
+    ```json
+    {
+      "input": {
+        "maxFileSize": 100000000
+      }
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="How do I split output for large codebases?">
+    For large codebases that exceed AI tool file size limits, use the `--split-output` option:
+
+    ```bash
+    repomix --split-output 1mb
+    ```
+
+    This generates numbered files (e.g., `repomix-output.1.xml`, `repomix-output.2.xml`) while maintaining context by grouping files by top-level directory.
+  </Accordion>
+
+  <Accordion title="Does Repomix detect sensitive information?">
+    Yes! Repomix incorporates [Secretlint](https://github.com/secretlint/secretlint) for security checks to detect and prevent inclusion of sensitive information like API keys, passwords, and secrets.
+
+    You can disable this check if needed:
+    ```bash
+    repomix --no-security-check
+    ```
+  </Accordion>
+
+  <Accordion title="Can I use Repomix with Docker?">
+    Yes! Repomix provides an official Docker image:
+
+    ```bash
+    # Basic usage
+    docker run -v .:/app -it --rm ghcr.io/yamadashy/repomix
+
+    # Process remote repository
+    docker run -v ./output:/app -it --rm ghcr.io/yamadashy/repomix --remote https://github.com/user/repo
+    ```
+  </Accordion>
+
+  <Accordion title="What is MCP Server Integration?">
+    Repomix supports the Model Context Protocol (MCP), allowing AI assistants to directly interact with your codebase. When run as an MCP server, Repomix provides tools that enable AI assistants to package repositories for analysis.
+
+    ```bash
+    repomix --mcp
+    ```
+
+    This is particularly useful with AI coding assistants like Claude Code, Cursor, and VS Code extensions.
+  </Accordion>
+
+  <Accordion title="How do I update Repomix?">
+    Update Repomix using your package manager:
+
+    ```bash
+    # Using npm
+    npm update -g repomix
+
+    # Using yarn
+    yarn global upgrade repomix
+
+    # Using bun
+    bun update -g repomix
+
+    # Using Homebrew
+    brew upgrade repomix
+    ```
+
+    Using `npx repomix@latest` is even simpler as it always uses the latest version.
+  </Accordion>
+
+  <Accordion title="Can I customize the output format?">
+    Yes! Repomix offers extensive customization options:
+
+    - Add custom header text: `--header-text "Your custom text"`
+    - Include custom instructions: `--instruction-file-path path/to/instructions.txt`
+    - Remove comments: `--remove-comments`
+    - Remove empty lines: `--remove-empty-lines`
+    - Show line numbers: `--output-show-line-numbers`
+    - Omit sections: `--no-file-summary`, `--no-directory-structure`
+  </Accordion>
+
+  <Accordion title="What are Agent Skills?">
+    Agent Skills is a feature that generates Claude Agent Skills format output, creating a structured directory that can be used as a reusable codebase reference for AI assistants.
+
+    ```bash
+    # Generate Skills from local directory
+    repomix --skill-generate
+
+    # Generate from remote repository
+    repomix --remote https://github.com/user/repo --skill-generate
+    ```
+
+    This creates a `.claude/skills/` directory with organized reference files.
+  </Accordion>
+
+  <Accordion title="Is there a web version of Repomix?">
+    Yes! You can use Repomix online at [repomix.com](https://repomix.com). Simply enter your repository name and click Pack to generate output instantly in your browser.
+
+    There are also browser extensions available:
+    - [Chrome Extension](https://chromewebstore.google.com/detail/repomix/fimfamikepjgchehkohedilpdigcpkoa)
+    - [Firefox Add-on](https://addons.mozilla.org/firefox/addon/repomix/)
+  </Accordion>
+</AccordionGroup>

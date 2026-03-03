@@ -1,0 +1,459 @@
+---
+title: Token Optimization
+description: Token counting, optimization strategies, and using the token count tree for analysis
+---
+
+Understanding and optimizing token usage is critical when working with AI models that have context limits. Repomix provides powerful tools to measure and reduce token count.
+
+## Understanding tokens
+
+Tokens are the basic units that AI models use to process text. Different AI models have different tokenization methods:
+
+- **GPT-4o**: Uses `o200k_base` encoding (default in Repomix)
+- **GPT-4 / GPT-3.5**: Uses `cl100k_base` encoding
+- **Claude**: Similar token counts to GPT-4
+
+Repomix uses [tiktoken](https://github.com/openai/tiktoken) for accurate token counting.
+
+<Note>
+As a rough estimate:
+- **1 token** ≈ 4 characters of English text
+- **1 token** ≈ 0.75 words
+- **100 tokens** ≈ 75 words or 400 characters
+</Note>
+
+## Check token counts
+
+Every time you run Repomix, it displays token counts:
+
+```bash
+repomix
+```
+
+Output:
+```
+📦 Repomix v1.12.0
+
+✔ Repository files collected
+✔ Security check completed
+✔ File contents processed
+✔ Output file generated
+
+📊 Total Files: 42
+📊 Total Characters: 125,430
+📊 Total Tokens: 31,250
+
+✅ Output file: repomix-output.xml
+```
+
+## Token count tree
+
+The `--token-count-tree` option provides a hierarchical view of token usage:
+
+```bash
+repomix --token-count-tree
+```
+
+Output:
+```
+🔢 Token Count Tree:
+────────────────────
+└── src/ (70,925 tokens)
+    ├── cli/ (12,714 tokens)
+    │   ├── actions/ (7,546 tokens)
+    │   │   ├── defaultAction.ts (3,890 tokens)
+    │   │   ├── initAction.ts (2,100 tokens)
+    │   │   └── remoteAction.ts (1,556 tokens)
+    │   └── reporters/ (990 tokens)
+    │       └── consoleReporter.ts (990 tokens)
+    └── core/ (41,600 tokens)
+        ├── file/ (10,098 tokens)
+        │   ├── fileCollect.ts (4,200 tokens)
+        │   ├── fileProcess.ts (3,500 tokens)
+        │   └── fileSearch.ts (2,398 tokens)
+        └── output/ (5,808 tokens)
+            ├── outputGenerate.ts (3,100 tokens)
+            └── outputStyle.ts (2,708 tokens)
+```
+
+This helps you:
+1. **Identify token-heavy directories** and files
+2. **Decide what to exclude** using `--ignore` patterns
+3. **Plan compression strategies** by targeting the largest contributors
+
+### Set a token threshold
+
+Show only files/directories with a minimum token count:
+
+```bash
+repomix --token-count-tree 1000
+```
+
+This displays only items with 1,000+ tokens, filtering out small files:
+
+```
+🔢 Token Count Tree (threshold: 1000+ tokens):
+────────────────────
+└── src/ (70,925 tokens)
+    ├── cli/ (12,714 tokens)
+    │   ├── actions/ (7,546 tokens)
+    │   │   ├── defaultAction.ts (3,890 tokens)
+    │   │   └── initAction.ts (2,100 tokens)
+    └── core/ (41,600 tokens)
+        ├── file/ (10,098 tokens)
+        │   ├── fileCollect.ts (4,200 tokens)
+        │   └── fileProcess.ts (3,500 tokens)
+```
+
+<Tip>
+Use `--token-count-tree 100` or `--token-count-tree 500` to find medium-sized files worth optimizing.
+</Tip>
+
+## Specify tokenizer encoding
+
+Choose the tokenization method matching your target AI model:
+
+<CodeGroup>
+
+```bash GPT-4o (default)
+repomix --token-count-encoding o200k_base
+```
+
+```bash GPT-4 / GPT-3.5
+repomix --token-count-encoding cl100k_base
+```
+
+```bash GPT-3
+repomix --token-count-encoding p50k_base
+```
+
+</CodeGroup>
+
+<Note>
+The default `o200k_base` encoding works well for most modern AI models (GPT-4o, GPT-4, Claude, etc.).
+</Note>
+
+## Token optimization strategies
+
+Here are proven strategies to reduce token count:
+
+### 1. Use compression
+
+The most effective method - reduces tokens by ~70%:
+
+```bash
+repomix --compress
+```
+
+**Before:**
+```
+📊 Total Tokens: 112,500
+```
+
+**After:**
+```
+📊 Total Tokens: 33,750
+```
+
+See the [Compression guide](/guides/compression) for details.
+
+### 2. Be selective with files
+
+Include only what you need:
+
+```bash
+# Only include source code, not tests or docs
+repomix --include "src/**/*.ts" --ignore "**/*.test.ts,**/*.spec.ts,docs/**"
+```
+
+### 3. Remove comments
+
+Strip all code comments:
+
+```bash
+repomix --remove-comments
+```
+
+This can reduce tokens by 10-20% depending on your codebase.
+
+### 4. Remove empty lines
+
+Eliminate blank lines:
+
+```bash
+repomix --remove-empty-lines
+```
+
+Typically saves 5-10% of tokens.
+
+### 5. Truncate base64 data
+
+Shorten long base64 strings:
+
+```bash
+repomix --truncate-base64
+```
+
+Useful if your code contains embedded data URIs or encoded assets.
+
+### 6. Combine strategies
+
+Stack multiple optimizations:
+
+```bash
+repomix --compress --remove-comments --remove-empty-lines
+```
+
+**Results:**
+- Compression: -70% tokens
+- Remove comments: -10% additional  
+- Remove empty lines: -5% additional
+
+**Total reduction: ~75-80% tokens**
+
+## Real-world optimization examples
+
+<Tabs>
+  <Tab title="Large monorepo">
+    **Problem:** 500+ files, 500K+ tokens
+    
+    **Strategy:**
+    ```bash
+    # Step 1: See where tokens are
+    repomix --token-count-tree 1000
+    
+    # Step 2: Focus on high-value areas
+    repomix --include "packages/core/**,packages/utils/**" \
+            --ignore "**/*.test.*" \
+            --compress \
+            --remove-comments
+    ```
+    
+    **Result:** 500K → 75K tokens
+  </Tab>
+  
+  <Tab title="React application">
+    **Problem:** 150 components, 200K tokens
+    
+    **Strategy:**
+    ```bash
+    # Compress components, keep structure
+    repomix src --compress \
+                --include "**/*.{ts,tsx}" \
+                --ignore "**/*.test.*,**/*.stories.*" \
+                --remove-empty-lines
+    ```
+    
+    **Result:** 200K → 50K tokens
+  </Tab>
+  
+  <Tab title="Python data science project">
+    **Problem:** Notebooks and scripts, 180K tokens
+    
+    **Strategy:**
+    ```bash
+    # Include code, exclude data and outputs
+    repomix --include "**/*.py" \
+            --ignore "data/**,outputs/**,**/*.ipynb" \
+            --remove-comments \
+            --compress
+    ```
+    
+    **Result:** 180K → 40K tokens
+  </Tab>
+  
+  <Tab title="Documentation site">
+    **Problem:** 200+ Markdown files, 150K tokens
+    
+    **Strategy:**
+    ```bash
+    # Focus on main docs, exclude examples
+    repomix --include "docs/**/*.md" \
+            --ignore "docs/examples/**,docs/archive/**" \
+            --remove-empty-lines
+    ```
+    
+    **Result:** 150K → 80K tokens
+  </Tab>
+</Tabs>
+
+## AI model context limits
+
+Understand your target AI model's limits:
+
+| Model | Context Limit | Recommended Max |
+|-------|---------------|----------------|
+| **GPT-4o** | 128K tokens | 100K tokens |
+| **GPT-4 Turbo** | 128K tokens | 100K tokens |
+| **GPT-4** | 8K tokens | 6K tokens |
+| **GPT-3.5 Turbo** | 16K tokens | 12K tokens |
+| **Claude 3 Opus** | 200K tokens | 150K tokens |
+| **Claude 3 Sonnet** | 200K tokens | 150K tokens |
+| **Gemini 1.5 Pro** | 1M tokens | 800K tokens |
+
+<Note>
+Leave headroom for the AI's response. If a model has a 100K token limit, aim for 80-90K tokens in your input.
+</Note>
+
+## Show top largest files
+
+Use `--top-files-len` to customize how many of the largest files are shown in the summary:
+
+```bash
+repomix --top-files-len 20
+```
+
+Default is 5. Increase this to see more large files in the output summary:
+
+```
+📊 Top 20 Files by Size:
+  1. src/core/packager/packager.ts (8,542 tokens)
+  2. src/cli/actions/defaultAction.ts (7,123 tokens)
+  3. src/core/file/fileCollect.ts (6,890 tokens)
+  ...
+```
+
+## Iterative optimization workflow
+
+<Steps>
+  <Step title="Baseline measurement">
+    ```bash
+    repomix --verbose
+    ```
+    
+    Note the total token count.
+  </Step>
+  
+  <Step title="Analyze token distribution">
+    ```bash
+    repomix --token-count-tree 500
+    ```
+    
+    Identify the heaviest directories and files.
+  </Step>
+  
+  <Step title="Apply selective inclusion">
+    ```bash
+    repomix --include "src/core/**,src/utils/**" \
+            --ignore "**/*.test.*"
+    ```
+    
+    Focus on essential code.
+  </Step>
+  
+  <Step title="Add compression">
+    ```bash
+    repomix --include "src/core/**,src/utils/**" \
+            --ignore "**/*.test.*" \
+            --compress
+    ```
+    
+    Apply Tree-sitter compression.
+  </Step>
+  
+  <Step title="Additional cleanup">
+    ```bash
+    repomix --include "src/core/**,src/utils/**" \
+            --ignore "**/*.test.*" \
+            --compress \
+            --remove-comments \
+            --remove-empty-lines
+    ```
+    
+    Remove comments and empty lines.
+  </Step>
+  
+  <Step title="Verify and test">
+    ```bash
+    repomix --include "src/core/**,src/utils/**" \
+            --ignore "**/*.test.*" \
+            --compress \
+            --remove-comments \
+            --remove-empty-lines \
+            --verbose
+    ```
+    
+    Check final token count. Test with your AI assistant to ensure sufficient context.
+  </Step>
+</Steps>
+
+## Split output for very large codebases
+
+If optimization isn't enough, split the output into multiple files:
+
+```bash
+repomix --split-output 1mb
+```
+
+This creates multiple files:
+- `repomix-output.1.xml`
+- `repomix-output.2.xml`
+- `repomix-output.3.xml`
+
+See the [Splitting output guide](/guides/splitting-output) for details.
+
+## Verbose output for debugging
+
+Use `--verbose` to see detailed processing information:
+
+```bash
+repomix --verbose
+```
+
+This shows:
+- Files being processed
+- Token counts per file
+- Configuration details
+- Processing time
+
+## Save settings in config file
+
+Once you've found the optimal settings, save them:
+
+```bash
+repomix --init
+```
+
+Edit `repomix.config.json`:
+
+```json
+{
+  "output": {
+    "compress": true,
+    "removeComments": true,
+    "removeEmptyLines": true
+  },
+  "include": ["src/**/*.ts"],
+  "ignore": {
+    "customPatterns": ["**/*.test.ts", "**/*.spec.ts"]
+  }
+}
+```
+
+Then simply run:
+
+```bash
+repomix
+```
+
+Your optimizations are applied automatically!
+
+## What's next?
+
+<CardGroup cols={2}>
+  <Card title="Compression" icon="file-zipper" href="/guides/compression">
+    Deep dive into Tree-sitter compression
+  </Card>
+  
+  <Card title="Splitting output" icon="scissors" href="/guides/splitting-output">
+    Split large outputs into multiple files
+  </Card>
+  
+  <Card title="Configuration" icon="gear" href="/configuration/config-file">
+    Save optimization settings in config
+  </Card>
+  
+  <Card title="Output formats" icon="file-code" href="/concepts/output-formats">
+    Choose optimal format for token usage
+  </Card>
+</CardGroup>

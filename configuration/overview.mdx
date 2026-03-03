@@ -1,0 +1,229 @@
+---
+title: Configuration Overview
+description: Learn how to configure Repomix using config files, CLI options, and environment variables
+---
+
+Repomix provides a flexible configuration system that allows you to customize how your repository is packaged. You can configure Repomix through:
+
+- **Configuration files** - `repomix.config.json`, `repomix.config.ts`, etc.
+- **CLI options** - Command-line flags that override config files
+- **Ignore files** - `.gitignore`, `.repomixignore`, `.ignore`
+
+## Configuration Priority
+
+Repomix merges configurations in the following order (highest priority first):
+
+1. **CLI options** - Flags passed directly to the command
+2. **Local config file** - Config file in your project root
+3. **Global config file** - Config file in global config directory
+4. **Default values** - Built-in defaults
+
+```bash
+# CLI options override config file settings
+repomix --style markdown --remove-comments
+```
+
+## Configuration File Locations
+
+Repomix searches for configuration files in this order:
+
+### Local Configuration (Project Root)
+
+1. `repomix.config.ts`
+2. `repomix.config.mts`
+3. `repomix.config.cts`
+4. `repomix.config.js`
+5. `repomix.config.mjs`
+6. `repomix.config.cjs`
+7. `repomix.config.json5`
+8. `repomix.config.jsonc`
+9. `repomix.config.json`
+
+### Global Configuration
+
+Global config files are stored in:
+
+- **macOS/Linux**: `~/.config/repomix/`
+- **Windows**: `%APPDATA%\repomix\`
+
+The same file name priority applies to global configs.
+
+## Quick Start
+
+### Generate a Config File
+
+```bash
+repomix --init
+```
+
+This creates a `repomix.config.json` with common options.
+
+### Basic JSON Configuration
+
+```json repomix.config.json
+{
+  "output": {
+    "filePath": "output.xml",
+    "style": "xml",
+    "removeComments": true,
+    "showLineNumbers": true
+  },
+  "ignore": {
+    "customPatterns": [
+      "**/test/**",
+      "**/*.spec.ts"
+    ]
+  }
+}
+```
+
+### TypeScript Configuration
+
+```typescript repomix.config.ts
+import { defineConfig } from 'repomix';
+
+export default defineConfig({
+  output: {
+    filePath: 'output.xml',
+    style: 'xml',
+    removeComments: true,
+    showLineNumbers: true,
+  },
+  ignore: {
+    customPatterns: [
+      '**/test/**',
+      '**/*.spec.ts',
+    ],
+  },
+});
+```
+
+## Configuration Schema
+
+### Top-Level Options
+
+<ParamField path="input" type="object">
+  Input file processing options
+  
+  <Expandable title="properties">
+    <ParamField path="maxFileSize" type="number" default="52428800">
+      Maximum file size in bytes (default: 50MB)
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField path="output" type="object">
+  Output generation options
+  
+  See [Output Options](/configuration/output-options) for details.
+</ParamField>
+
+<ParamField path="include" type="string[]" default="[]">
+  Glob patterns for files to include
+  
+  See [File Patterns](/configuration/file-patterns) for details.
+</ParamField>
+
+<ParamField path="ignore" type="object">
+  File ignore configuration
+  
+  See [File Patterns](/configuration/file-patterns) for details.
+</ParamField>
+
+<ParamField path="security" type="object">
+  Security check options
+  
+  <Expandable title="properties">
+    <ParamField path="enableSecurityCheck" type="boolean" default="true">
+      Enable security checks to detect potentially sensitive files
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField path="tokenCount" type="object">
+  Token counting configuration
+  
+  <Expandable title="properties">
+    <ParamField path="encoding" type="string" default="o200k_base">
+      Tiktoken encoding to use for token counting. Options: `o200k_base`, `cl100k_base`, `p50k_base`, `r50k_base`
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Common Use Cases
+
+### Exclude Test Files
+
+```json
+{
+  "ignore": {
+    "customPatterns": [
+      "**/__tests__/**",
+      "**/*.test.ts",
+      "**/*.spec.ts"
+    ]
+  }
+}
+```
+
+### Markdown Output with Comments Removed
+
+```json
+{
+  "output": {
+    "style": "markdown",
+    "filePath": "codebase.md",
+    "removeComments": true,
+    "removeEmptyLines": true
+  }
+}
+```
+
+### Include Only Specific Directories
+
+```json
+{
+  "include": [
+    "src/**/*",
+    "lib/**/*"
+  ],
+  "ignore": {
+    "useDefaultPatterns": true
+  }
+}
+```
+
+## Environment-Specific Configs
+
+Use different config files for different scenarios:
+
+```bash
+# Development config
+repomix --config repomix.dev.json
+
+# Production config
+repomix --config repomix.prod.json
+
+# AI-optimized config
+repomix --config repomix.ai.json
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Config File Reference" icon="file-code" href="/configuration/config-file">
+    Complete configuration file schema and options
+  </Card>
+  
+  <Card title="File Patterns" icon="filter" href="/configuration/file-patterns">
+    Glob patterns for include/exclude rules
+  </Card>
+  
+  <Card title="Output Options" icon="file-export" href="/configuration/output-options">
+    Customize output format and content
+  </Card>
+  
+  <Card title="CLI Reference" icon="terminal" href="/cli/options">
+    Command-line options and flags
+  </Card>
+</CardGroup>

@@ -1,0 +1,416 @@
+---
+title: Remote Repositories
+description: Process remote Git repositories without cloning them manually
+---
+
+Repomix can process remote Git repositories without requiring manual cloning. This feature allows you to quickly analyze any public Git repository with a single command.
+
+## Basic remote packing
+
+Use the `--remote` option followed by the repository URL:
+
+```bash
+repomix --remote https://github.com/yamadashy/repomix
+```
+
+<Tip>
+No need to clone the repository first. Repomix handles cloning automatically in a temporary directory.
+</Tip>
+
+## GitHub shorthand format
+
+Instead of the full URL, you can use GitHub's `user/repo` shorthand:
+
+```bash
+repomix --remote yamadashy/repomix
+```
+
+This is equivalent to the full GitHub URL but much faster to type.
+
+## Specify branches, tags, or commits
+
+Repomix supports targeting specific branches, tags, or commit hashes:
+
+<Tabs>
+  <Tab title="Using --remote-branch">
+    <Steps>
+      <Step title="Specify a branch">
+        ```bash
+        repomix --remote yamadashy/repomix --remote-branch main
+        ```
+        
+        Clone and pack from the `main` branch.
+      </Step>
+      
+      <Step title="Specify a tag">
+        ```bash
+        repomix --remote yamadashy/repomix --remote-branch v1.0.0
+        ```
+        
+        Clone and pack from the `v1.0.0` tag.
+      </Step>
+      
+      <Step title="Specify a commit hash">
+        ```bash
+        repomix --remote yamadashy/repomix --remote-branch 935b695
+        ```
+        
+        Clone and pack from a specific commit.
+      </Step>
+    </Steps>
+  </Tab>
+  
+  <Tab title="Using branch URLs">
+    <Steps>
+      <Step title="Branch URL">
+        ```bash
+        repomix --remote https://github.com/yamadashy/repomix/tree/main
+        ```
+        
+        Extract the branch from the URL automatically.
+      </Step>
+      
+      <Step title="Commit URL">
+        ```bash
+        repomix --remote https://github.com/yamadashy/repomix/commit/836abcd7335137228ad77feb28655d85712680f1
+        ```
+        
+        Extract the commit hash from the URL automatically.
+      </Step>
+    </Steps>
+    
+    <Note>
+    Repomix automatically detects branch names and commit hashes from GitHub URLs, so you don't need the `--remote-branch` flag.
+    </Note>
+  </Tab>
+</Tabs>
+
+## Combine with other options
+
+All standard Repomix options work with remote repositories:
+
+<CodeGroup>
+
+```bash Compress output
+repomix --remote yamadashy/repomix --compress
+```
+
+```bash Include specific files
+repomix --remote yamadashy/repomix --include "src/**/*.ts"
+```
+
+```bash Markdown output
+repomix --remote yamadashy/repomix --style markdown
+```
+
+```bash Custom output file
+repomix --remote yamadashy/repomix --output /tmp/repomix-analysis.xml
+```
+
+```bash Remove comments
+repomix --remote yamadashy/repomix --remove-comments --remove-empty-lines
+```
+
+</CodeGroup>
+
+## Real-world use cases
+
+<Tabs>
+  <Tab title="Library analysis">
+    Before adding a new dependency to your project, analyze its codebase:
+    
+    ```bash
+    repomix --remote facebook/react --include "packages/react/**" --compress
+    ```
+    
+    Then ask AI:
+    ```
+    This file contains the React library source code. Please explain 
+    the core reconciliation algorithm and how it handles component updates.
+    ```
+  </Tab>
+  
+  <Tab title="Learning from examples">
+    Study well-structured projects:
+    
+    ```bash
+    repomix --remote vercel/next.js --include "examples/blog/**"
+    ```
+    
+    Then ask AI:
+    ```
+    Analyze this Next.js blog example. What best practices does it demonstrate 
+    for file structure, routing, and data fetching?
+    ```
+  </Tab>
+  
+  <Tab title="Implementation reference">
+    Use existing implementations as references:
+    
+    ```bash
+    repomix --remote stripe/stripe-node --include "src/**/*.ts"
+    ```
+    
+    Then ask AI:
+    ```
+    I'm building a payment integration. Show me how Stripe's SDK handles 
+    API requests, error handling, and type safety.
+    ```
+  </Tab>
+  
+  <Tab title="Security audit">
+    Quick security review of a library:
+    
+    ```bash
+    repomix --remote some-org/some-library --include "src/**" --copy
+    ```
+    
+    Then ask AI:
+    ```
+    Review this codebase for security vulnerabilities, particularly around 
+    input validation, authentication, and data handling.
+    ```
+  </Tab>
+  
+  <Tab title="Migration planning">
+    Analyze a project before migration:
+    
+    ```bash
+    repomix --remote my-org/legacy-app --remote-branch production
+    ```
+    
+    Then ask AI:
+    ```
+    This is a legacy application. Create a migration plan to update it to 
+    modern standards, identifying dependencies, deprecated patterns, and 
+    potential issues.
+    ```
+  </Tab>
+</Tabs>
+
+## Process private repositories
+
+For private repositories, ensure you have:
+
+1. **Git credentials configured** on your system
+2. **SSH keys** set up for GitHub (if using SSH URLs)
+3. **Personal access token** (if using HTTPS)
+
+```bash
+# Using SSH (requires SSH key)
+repomix --remote git@github.com:my-org/private-repo.git
+
+# Using HTTPS (requires PAT)
+repomix --remote https://github.com/my-org/private-repo
+```
+
+<Note>
+Repomix uses your system's Git configuration for authentication. Make sure you can clone the repository normally with `git clone` before using Repomix.
+</Note>
+
+## Output locations
+
+By default, Repomix saves remote repository output in your current directory:
+
+<Steps>
+  <Step title="Default behavior">
+    ```bash
+    repomix --remote yamadashy/repomix
+    # Creates: ./repomix-output.xml
+    ```
+  </Step>
+  
+  <Step title="Custom output directory">
+    ```bash
+    repomix --remote yamadashy/repomix --output /tmp/analysis/repomix.xml
+    ```
+  </Step>
+  
+  <Step title="Copy to clipboard">
+    ```bash
+    repomix --remote yamadashy/repomix --copy
+    ```
+    
+    Output is generated and copied to clipboard automatically.
+  </Step>
+</Steps>
+
+## Performance considerations
+
+<Note>
+Cloning large repositories can take time. Here are some optimization strategies:
+</Note>
+
+### Reduce clone size
+
+```bash
+# Include only specific directories
+repomix --remote yamadashy/repomix --include "src/**"
+
+# Exclude large directories
+repomix --remote yamadashy/repomix --ignore "tests/**,docs/**,examples/**"
+```
+
+### Use compression
+
+For large codebases, use compression to reduce token count:
+
+```bash
+repomix --remote yamadashy/repomix --compress
+```
+
+This uses Tree-sitter to extract only essential code structure, reducing tokens by ~70%.
+
+### Target specific commits
+
+Processing a specific commit is faster than processing a branch:
+
+```bash
+# Faster: specific commit
+repomix --remote yamadashy/repomix --remote-branch 935b695
+
+# Slower: latest from branch (needs to check for updates)
+repomix --remote yamadashy/repomix --remote-branch main
+```
+
+## Docker usage with remote repositories
+
+You can also use Docker to process remote repositories:
+
+<CodeGroup>
+
+```bash Basic remote pack
+docker run -v ./output:/app -it --rm ghcr.io/yamadashy/repomix --remote yamadashy/repomix
+```
+
+```bash With options
+docker run -v ./output:/app -it --rm ghcr.io/yamadashy/repomix \
+  --remote yamadashy/repomix \
+  --compress \
+  --style markdown
+```
+
+```bash Specific branch
+docker run -v ./output:/app -it --rm ghcr.io/yamadashy/repomix \
+  --remote https://github.com/yamadashy/repomix/tree/main
+```
+
+</CodeGroup>
+
+<Tip>
+The output files are saved to the mounted `./output` directory on your host system.
+</Tip>
+
+## Common workflows
+
+### Quick library check
+
+Before installing a new dependency:
+
+```bash
+# 1. Pack the library
+repomix --remote lodash/lodash --include "src/**" --compress --copy
+
+# 2. Ask AI
+# Paste into ChatGPT/Claude: "What are the main utilities in this library 
+# and how do they work?"
+```
+
+### Compare implementations
+
+Compare how different libraries solve the same problem:
+
+```bash
+# Pack first library
+repomix --remote axios/axios --output axios.xml
+
+# Pack second library
+repomix --remote sindresorhus/ky --output ky.xml
+
+# Compare with AI
+# Upload both files and ask: "Compare these two HTTP client libraries. 
+# What are the architectural differences?"
+```
+
+### Version comparison
+
+Compare different versions of the same project:
+
+```bash
+# Pack v1.0.0
+repomix --remote yamadashy/repomix --remote-branch v1.0.0 --output v1.xml
+
+# Pack v2.0.0
+repomix --remote yamadashy/repomix --remote-branch v2.0.0 --output v2.xml
+
+# Analyze changes with AI
+```
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Authentication failed for private repository">
+    **Solution:** Ensure your Git credentials are properly configured:
+    
+    ```bash
+    # Test cloning manually first
+    git clone https://github.com/my-org/private-repo
+    
+    # If that works, Repomix should work too
+    repomix --remote https://github.com/my-org/private-repo
+    ```
+    
+    For HTTPS, you may need a personal access token in your Git credential manager.
+  </Accordion>
+  
+  <Accordion title="Repository not found error">
+    **Solution:** Check the repository URL and ensure it's publicly accessible:
+    
+    ```bash
+    # Verify the URL in your browser first
+    # Then try with Repomix:
+    repomix --remote yamadashy/repomix
+    ```
+  </Accordion>
+  
+  <Accordion title="Clone operation is very slow">
+    **Solution:** Use include/ignore patterns to reduce the scope:
+    
+    ```bash
+    # Only pack specific directories
+    repomix --remote large-org/huge-repo --include "src/core/**"
+    ```
+  </Accordion>
+  
+  <Accordion title="Out of memory error">
+    **Solution:** Process smaller portions or use compression:
+    
+    ```bash
+    # Option 1: Include specific files only
+    repomix --remote large-repo --include "src/**/*.ts"
+    
+    # Option 2: Use compression
+    repomix --remote large-repo --compress
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## What's next?
+
+<CardGroup cols={2}>
+  <Card title="Compression" icon="file-zipper" href="/guides/compression">
+    Learn how to reduce token count with Tree-sitter
+  </Card>
+  
+  <Card title="Token optimization" icon="chart-line" href="/guides/token-optimization">
+    Strategies for staying within AI context limits
+  </Card>
+  
+  <Card title="Docker usage" icon="docker" href="/guides/docker">
+    Run Repomix in isolated containers
+  </Card>
+  
+  <Card title="Output formats" icon="file-code" href="/concepts/output-formats">
+    Choose the best format for your use case
+  </Card>
+</CardGroup>

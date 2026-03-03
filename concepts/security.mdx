@@ -1,0 +1,662 @@
+---
+title: Security
+description: Learn how Repomix protects sensitive data with Secretlint integration
+---
+
+Repomix includes built-in security scanning to prevent accidentally exposing sensitive information like API keys, passwords, and tokens in your output files.
+
+## Security Architecture
+
+Repomix uses [Secretlint](https://github.com/secretlint/secretlint), a powerful secret detection tool, to scan all files before including them in the output.
+
+```
+┌─────────────────┐
+│  Raw Files      │
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│  Security Check │  Secretlint scanning
+│  (Worker Pool)  │  in parallel
+└────────┬────────┘
+         │
+    ┌────┴────┐
+    │         │
+    ▼         ▼
+┌─────┐   ┌──────┐
+│Safe │   │Flagged│  Excluded from output
+│Files│   │Files  │  Reported to user
+└──┬──┘   └──────┘
+   │
+   ▼
+┌─────────────────┐
+│ File Processing │
+└─────────────────┘
+```
+
+## How Security Checks Work
+
+### Parallel Scanning
+
+Security checks run in parallel using worker threads for optimal performance.
+
+**Implementation:** `src/core/security/securityCheck.ts:16`
+
+```typescript
+export const runSecurityCheck = async (
+  rawFiles: RawFile[],
+  progressCallback: RepomixProgressCallback = () => {},
+  gitDiffResult?: GitDiffResult,
+  gitLogResult?: GitLogResult,
+) => {
+  const taskRunner = initTaskRunner({
+    numOfTasks: rawFiles.length + gitDiffTasks.length + gitLogTasks.length,
+    workerType: 'securityCheck',
+    runtime: 'worker_threads', // Isolated worker threads
+  });
+  
+  const tasks = [...fileTasks, ...gitDiffTasks, ...gitLogTasks];
+  
+  const results = await Promise.all(
+    tasks.map((task) =>
+      taskRunner.run(task).then((result) => {
+        completedTasks++;
+        progressCallback(`Running security check... (${completedTasks}/${totalTasks})`);
+        return result;
+      })
+    )
+  );
+  
+  return results.filter((result): result is SuspiciousFileResult => result !== null);
+};
+```
+
+### Secretlint Integration
+
+Each file is scanned using Secretlint's recommended rule preset.
+
+**Implementation:** `src/core/security/workers/securityCheckWorker.ts:44`
+
+```typescript
+import { lintSource } from '@secretlint/core';
+import { creator } from '@secretlint/secretlint-rule-preset-recommend';
+
+export const runSecretLint = async (
+  filePath: string,
+  content: string,
+  type: SecurityCheckType,
+  config: SecretLintCoreConfig,
+): Promise<SuspiciousFileResult | null> => {
+  const result = await lintSource({
+    source: {
+      filePath: filePath,
+      content: content,
+      ext: filePath.split('.').pop() || '',
+      contentType: 'text',
+    },
+    options: {
+      config: config,
+    },
+  });
+  
+  if (result.messages.length > 0) {
+    const issueCount = result.messages.length;
+    const issueText = issueCount === 1 ? 'security issue' : 'security issues';
+    logger.trace(`Found ${issueCount} ${issueText} in ${filePath}`);
+    
+    return {
+      filePath,
+      messages: result.messages.map((message) => message.message),
+      type,
+    };
+  }
+  
+  return null;
+};
+```
+
+### Secretlint Configuration
+
+**Implementation:** `src/core/security/workers/securityCheckWorker.ts:78`
+
+```typescript
+export const createSecretLintConfig = (): SecretLintCoreConfig => ({
+  rules: [
+    {
+      id: '@secretlint/secretlint-rule-preset-recommend',
+      rule: creator,
+    },
+  ],
+});
+```
+
+The recommended preset includes detection for:
+- AWS Access Keys
+- GitHub Tokens
+- Google API Keys
+- Slack Tokens
+- Private Keys (RSA, SSH, PGP)
+- Database Credentials
+- API Keys and Secrets
+- OAuth Tokens
+- JWT Tokens
+- And many more...
+
+## What Gets Scanned
+
+Repomix scans three types of content:
+
+### 1. File Content
+
+All files that pass the include/exclude filters are scanned:
+
+```typescript
+const fileTasks = rawFiles.map(
+  (file) =>
+    ({
+      filePath: file.path,
+      content: file.content,
+      type: 'file', // Regular file
+    }) satisfies SecurityCheckTask,
+);
+```
+
+**Result:** Files with security issues are **excluded** from the output.
+
+### 2. Git Diff Content
+
+When `--include-diffs` is enabled, both working tree and staged changes are scanned:
+
+```typescript
+if (gitDiffResult) {
+  if (gitDiffResult.workTreeDiffContent) {
+    gitDiffTasks.push({
+      filePath: 'Working tree changes',
+      content: gitDiffResult.workTreeDiffContent,
+      type: 'gitDiff',
+    });
+  }
+  
+  if (gitDiffResult.stagedDiffContent) {
+    gitDiffTasks.push({
+      filePath: 'Staged changes',
+      content: gitDiffResult.stagedDiffContent,
+      type: 'gitDiff',
+    });
+  }
+}
+```
+
+**Result:** Git diffs with issues are **still included** but reported to the user.
+
+### 3. Git Log Content
+
+When `--include-logs` is enabled, commit history is scanned:
+
+```typescript
+if (gitLogResult) {
+  if (gitLogResult.logContent) {
+    gitLogTasks.push({
+      filePath: 'Git log history',
+      content: gitLogResult.logContent,
+      type: 'gitLog',
+    });
+  }
+}
+```
+
+**Result:** Git logs with issues are **still included** but reported to the user.
+
+<Warning>
+Git diffs and logs are included even if they contain secrets because they represent uncommitted changes or history. Review the security warnings carefully.
+</Warning>
+
+## Security Check Results
+
+After scanning, Repomix provides a comprehensive security report.
+
+### File Exclusions
+
+**Implementation:** `src/core/security/filterOutUntrustedFiles.ts`
+
+```typescript
+const filterOutUntrustedFiles = (
+  rawFiles: RawFile[],
+  suspiciousFiles: SuspiciousFileResult[],
+): RawFile[] => {
+  const suspiciousFilePaths = new Set(
+    suspiciousFiles
+      .filter(result => result.type === 'file')
+      .map(result => result.filePath)
+  );
+  
+  return rawFiles.filter(file => !suspiciousFilePaths.has(file.path));
+};
+```
+
+Files flagged as suspicious are automatically removed from the output.
+
+### Security Report
+
+**Implementation:** `src/cli/cliReport.ts:71`
+
+```typescript
+let securityCheckMessage = '';
+if (config.security.enableSecurityCheck) {
+  if (packResult.suspiciousFilesResults.length > 0) {
+    securityCheckMessage = pc.yellow(
+      `${packResult.suspiciousFilesResults.length} suspicious file(s) detected and excluded`,
+    );
+  } else {
+    securityCheckMessage = '✓ No suspicious files detected';
+  }
+} else {
+  securityCheckMessage = pc.dim('Security check disabled');
+}
+```
+
+**Console Output:**
+```
+📊 Result Summary:
+     Files: 45
+ Characters: 123,456
+    Tokens: 34,567
+  Security: ⚠ 2 suspicious file(s) detected and excluded
+
+⚠ Security Check Results:
+
+2 suspicious file(s) detected:
+
+  src/config/credentials.ts
+    └─ 2 security issues
+  
+  .env.example
+    └─ 1 security issue
+
+These files have been excluded from the output for security reasons.
+Please review these files for potential sensitive information.
+```
+
+### Git-Related Security Warnings
+
+**Implementation:** `src/cli/cliReport.ts:164`
+
+```typescript
+const reportGitSecurityResults = (
+  results: SuspiciousFileResult[],
+  title: string,
+) => {
+  if (results.length === 0) return;
+  
+  const totalIssues = results.reduce((sum, result) => sum + result.messages.length, 0);
+  const issueText = totalIssues === 1 ? 'security issue' : 'security issues';
+  
+  logger.log(pc.yellow(`${results.length} security issue(s) found in ${title}:`));
+  
+  for (const result of results) {
+    const issueCount = result.messages.length;
+    const issueText = issueCount === 1 ? 'security issue' : 'security issues';
+    logger.log(`  ${result.filePath}`);
+    logger.log(`    └─ ${issueCount} ${issueText}`);
+  }
+  
+  logger.log(pc.yellow(`\nNote: ${title} with security issues are still included in the output.`));
+  logger.log(pc.yellow('Please review these carefully before sharing.'));
+};
+```
+
+**Console Output:**
+```
+⚠ Security Check - Git Diffs:
+
+1 security issue(s) found in Working tree changes:
+  Working tree changes
+    └─ 1 security issue
+
+Note: Working tree changes with security issues are still included in the output.
+Please review these carefully before sharing.
+```
+
+## Disabling Security Checks
+
+<Warning>
+Only disable security checks if you understand the risks and are certain your repository doesn't contain sensitive data.
+</Warning>
+
+### CLI
+
+```bash
+# Disable security scanning
+repomix --no-security-check
+```
+
+**Implementation:** `src/cli/actions/defaultAction.ts:212`
+
+```typescript
+// Only apply securityCheck setting if explicitly set to false
+if (options.securityCheck === false) {
+  cliConfig.security = { enableSecurityCheck: options.securityCheck };
+}
+```
+
+### Configuration File
+
+```json repomix.config.json
+{
+  "security": {
+    "enableSecurityCheck": false
+  }
+}
+```
+
+### Output Impact
+
+When security checks are disabled:
+
+1. **File Summary:** Includes a warning note
+   ```
+   - Security check has been disabled - content may contain sensitive information
+   ```
+
+2. **Processing Notes:** Added to generation header
+   ```
+   This file was generated with the following settings:
+   - security check has been disabled
+   ```
+
+**Implementation:** `src/core/output/outputStyleDecorate.ts:84`
+
+```typescript
+if (!info.processing.securityCheckEnabled) {
+  processingNotes.push('security check has been disabled');
+}
+
+// Later in notes section:
+if (!info.processing.securityCheckEnabled) {
+  notes.push('- Security check has been disabled - content may contain sensitive information');
+}
+```
+
+## Sensitive Data Detection Examples
+
+### AWS Credentials
+
+```javascript ❌ Flagged
+const AWS_ACCESS_KEY_ID = 'AKIAIOSFODNN7EXAMPLE';
+const AWS_SECRET_ACCESS_KEY = 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY';
+```
+
+### GitHub Token
+
+```javascript ❌ Flagged
+const GITHUB_TOKEN = 'ghp_1234567890abcdefghijklmnopqrstuvwxyz';
+```
+
+### Private Keys
+
+```text ❌ Flagged
+-----BEGIN RSA PRIVATE KEY-----
+MIIEpAIBAAKCAQEA1234567890...
+-----END RSA PRIVATE KEY-----
+```
+
+### API Keys
+
+```javascript ❌ Flagged
+const STRIPE_KEY = 'sk_live_1234567890abcdefghijklmnop';
+const OPENAI_KEY = 'sk-1234567890abcdefghijklmnopqrstuvwxyz';
+```
+
+### Safe Patterns
+
+```javascript ✅ Safe
+// Environment variable references
+const apiKey = process.env.API_KEY;
+const token = process.env.GITHUB_TOKEN;
+
+// Placeholder values
+const example = 'your-api-key-here';
+const mock = 'sk_test_...';
+
+// Comments about secrets
+// Set your API_KEY environment variable
+```
+
+## Best Practices
+
+### 1. Review Security Warnings
+
+Always review the security report before sharing output:
+
+```bash
+repomix > output.log 2>&1
+grep -A 10 "Security Check Results" output.log
+```
+
+### 2. Use Environment Variables
+
+Store secrets in environment variables:
+
+```javascript Good
+const apiKey = process.env.API_KEY;
+const dbUrl = process.env.DATABASE_URL;
+```
+
+```javascript Bad
+const apiKey = 'sk_live_abc123...';
+const dbUrl = 'postgresql://user:pass@host/db';
+```
+
+### 3. Use .env Files (and Ignore Them)
+
+```bash .env
+API_KEY=sk_live_abc123...
+DATABASE_URL=postgresql://user:pass@host/db
+```
+
+```bash .gitignore
+.env
+.env.local
+.env.*.local
+```
+
+Repomix automatically ignores `.env` files via default patterns.
+
+### 4. Keep Secrets in Separate Files
+
+```typescript credentials.ts (in .gitignore)
+export const credentials = {
+  apiKey: 'sk_live_abc123...',
+  secretKey: 'secret...',
+};
+```
+
+```json repomix.config.json
+{
+  "ignore": {
+    "customPatterns": [
+      "**/credentials.ts",
+      "**/secrets/**",
+      "**/*.key",
+      "**/*.pem"
+    ]
+  }
+}
+```
+
+### 5. Review Git History
+
+If using `--include-logs`, review for accidentally committed secrets:
+
+```bash
+# Check recent commits for secrets
+git log -p -S "password" --all
+git log -p -S "api_key" --all
+
+# Use git-secrets tool
+git secrets --scan
+```
+
+## MCP File System Integration
+
+Repomix's MCP server includes security checks for file system operations:
+
+**Implementation:** `src/mcp/tools/fileSystemReadFileTool.ts:75`
+
+```typescript
+export const registerFileSystemReadFileTool = (server: McpServer) => {
+  server.tool(
+    'file_system_read_file',
+    'Read a file from the local file system using an absolute path. ' +
+    'Includes built-in security validation to detect and prevent access to ' +
+    'files containing sensitive information (API keys, passwords, secrets).',
+    // ...
+    async ({ path }) => {
+      const filePath = path;
+      const fileContent = await fs.readFile(filePath, 'utf-8');
+      
+      // Perform security check using the existing worker
+      const config = createSecretLintConfig();
+      const securityCheckResult = await runSecretLint(filePath, fileContent, 'file', config);
+      
+      // If security check found issues, block the file
+      if (securityCheckResult !== null) {
+        throw new Error(
+          `Error: Security check failed. The file at ${filePath} may contain sensitive information.`
+        );
+      }
+      
+      return {
+        content: [{ type: 'text', text: fileContent }],
+      };
+    }
+  );
+};
+```
+
+This prevents AI assistants from accidentally accessing sensitive files.
+
+## Performance Considerations
+
+Security scanning is optimized for large repositories:
+
+### Worker Pool Sizing
+
+```typescript
+// Security checks use worker threads
+const taskRunner = initTaskRunner({
+  numOfTasks: rawFiles.length,
+  workerType: 'securityCheck',
+  runtime: 'worker_threads', // Parallel workers
+});
+```
+
+Worker count automatically scales with CPU cores.
+
+### Timing Metrics
+
+```typescript
+const startTime = process.hrtime.bigint();
+const result = await runSecretLint(filePath, content, type, config);
+const endTime = process.hrtime.bigint();
+
+logger.trace(
+  `Checked security on ${filePath}. Took: ${(Number(endTime - startTime) / 1e6).toFixed(2)}ms`
+);
+```
+
+**Typical performance:**
+- Small file (< 10KB): ~5-10ms
+- Medium file (10-100KB): ~10-50ms
+- Large file (100KB-1MB): ~50-200ms
+
+### Memory Management
+
+```typescript
+await withMemoryLogging('Security Check', () =>
+  validateFileSafety(rawFiles, progressCallback, config, gitDiffResult, gitLogResult)
+);
+```
+
+Memory usage is logged for monitoring.
+
+## Security Check Flow
+
+Complete flow from file collection to output:
+
+**Implementation:** `src/core/packager.ts:116`
+
+```typescript
+// 1. Collect files
+const rawFiles = collectResults.flatMap((curr) => curr.rawFiles);
+
+// 2. Get git diffs if enabled
+const gitDiffResult = await getGitDiffs(rootDirs, config);
+
+// 3. Get git logs if enabled  
+const gitLogResult = await getGitLogs(rootDirs, config);
+
+// 4. Run security check and filter unsafe files
+const {
+  safeFilePaths,
+  safeRawFiles,
+  suspiciousFilesResults,
+  suspiciousGitDiffResults,
+  suspiciousGitLogResults,
+} = await validateFileSafety(
+  rawFiles,
+  progressCallback,
+  config,
+  gitDiffResult,
+  gitLogResult,
+);
+
+// 5. Process only safe files
+const processedFiles = await processFiles(safeRawFiles, config, progressCallback);
+
+// 6. Generate output with security results
+return {
+  ...metrics,
+  suspiciousFilesResults,
+  suspiciousGitDiffResults,
+  suspiciousGitLogResults,
+  processedFiles,
+  safeFilePaths,
+};
+```
+
+## Troubleshooting
+
+### False Positives
+
+If legitimate files are flagged:
+
+1. **Review the detection:** Check if the pattern resembles a real secret
+2. **Refactor the code:** Use environment variables or config files
+3. **Add to .repomixignore:** Exclude specific files if needed
+4. **Disable for trusted repos:** Use `--no-security-check` cautiously
+
+### Missing Secrets
+
+If you suspect secrets weren't detected:
+
+1. **Enable trace logging:** `export REPOMIX_LOG_LEVEL=trace`
+2. **Check Secretlint rules:** Review [@secretlint/secretlint-rule-preset-recommend](https://github.com/secretlint/secretlint/tree/master/packages/%40secretlint/secretlint-rule-preset-recommend)
+3. **Manual review:** Always review output before sharing
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="File Selection" icon="filter" href="/concepts/file-selection">
+    Control which files are included using ignore patterns
+  </Card>
+  <Card title="Configuration" icon="gear" href="/configuration/config-file">
+    Configure security settings in repomix.config.json
+  </Card>
+  <Card title="Output Formats" icon="file-code" href="/concepts/output-formats">
+    Understand how security notes appear in different formats
+  </Card>
+  <Card title="CLI Reference" icon="terminal" href="/cli-reference">
+    View all security-related CLI options
+  </Card>
+</CardGroup>

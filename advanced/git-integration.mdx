@@ -1,0 +1,564 @@
+---
+title: Git Integration
+description: Include git history, diffs, and change-based file sorting in your packed output
+icon: git-branch
+---
+
+## Overview
+
+Repomix provides powerful Git integration features that help you include version control context in your packed output. These features are particularly useful for:
+
+- Understanding recent changes to the codebase
+- Focusing on the most actively developed files
+- Including uncommitted work in progress
+- Providing change history to AI assistants
+
+## File Sorting by Git Changes
+
+By default, Repomix sorts files by their change frequency in Git history, placing the most frequently modified files first. This helps highlight the most active parts of your codebase.
+
+### How It Works
+
+Repomix analyzes the Git log to count how many times each file has been changed in recent commits (default: last 100 commits), then sorts files in descending order of change frequency.
+
+### Configuration
+
+#### Using CLI
+
+Sort by changes is **enabled by default**. To disable it:
+
+```bash
+repomix --no-git-sort-by-changes
+```
+
+Customize the number of commits to analyze:
+
+```bash
+# Analyze the last 50 commits (default: 100)
+repomix --git-sort-by-changes-max-commits 50
+
+# Analyze the last 500 commits
+repomix --git-sort-by-changes-max-commits 500
+```
+
+#### Using Configuration File
+
+In `repomix.config.json`:
+
+```json
+{
+  "output": {
+    "git": {
+      "sortByChanges": true,
+      "sortByChangesMaxCommits": 100
+    }
+  }
+}
+```
+
+Disable change-based sorting:
+
+```json
+{
+  "output": {
+    "git": {
+      "sortByChanges": false
+    }
+  }
+}
+```
+
+#### Programmatic API
+
+```typescript
+import { pack, defaultConfig } from 'repomix';
+
+const config = {
+  ...defaultConfig,
+  cwd: process.cwd(),
+  output: {
+    ...defaultConfig.output,
+    git: {
+      sortByChanges: true,
+      sortByChangesMaxCommits: 150
+    }
+  }
+};
+
+const result = await pack([process.cwd()], config);
+```
+
+### When to Use
+
+**Enable** when:
+- You want to highlight recently modified code
+- Working on feature development (active files appear first)
+- Performing code reviews of recent changes
+- Analyzing bug fixes (frequently changed files often need review)
+
+**Disable** when:
+- You prefer alphabetical or directory structure ordering
+- Working with a repository with no Git history
+- Analyzing stable, rarely-changed code
+
+## Git Diffs
+
+Include Git diff output showing uncommitted changes in your repository. This captures both working tree changes and staged changes.
+
+### What's Included
+
+When you enable `includeDiffs`, Repomix adds two sections:
+
+1. **Working Tree Diff**: Uncommitted changes in your working directory
+2. **Staged Diff**: Changes that have been staged with `git add`
+
+### Using CLI
+
+Include diffs in output:
+
+```bash
+repomix --include-diffs
+```
+
+Combine with other options:
+
+```bash
+repomix --include-diffs --style markdown --output changes.md
+```
+
+### Using Configuration File
+
+In `repomix.config.json`:
+
+```json
+{
+  "output": {
+    "git": {
+      "includeDiffs": true
+    }
+  }
+}
+```
+
+### Programmatic API
+
+```typescript
+import { pack, defaultConfig } from 'repomix';
+
+const config = {
+  ...defaultConfig,
+  cwd: process.cwd(),
+  output: {
+    ...defaultConfig.output,
+    git: {
+      includeDiffs: true
+    }
+  }
+};
+
+const result = await pack([process.cwd()], config);
+
+// Check diff token count
+console.log(`Git diff tokens: ${result.gitDiffTokenCount}`);
+```
+
+### Output Format
+
+#### XML Format
+
+```xml
+<git_diffs>
+  <git_diff_work_tree>
+diff --git a/src/index.ts b/src/index.ts
+index 1234567..abcdefg 100644
+--- a/src/index.ts
++++ b/src/index.ts
+@@ -1,3 +1,4 @@
++import { newFunction } from './utils';
+ export { pack } from './core/packager';
+  </git_diff_work_tree>
+  <git_diff_staged>
+<!-- Staged changes appear here -->
+  </git_diff_staged>
+</git_diffs>
+```
+
+#### Markdown Format
+
+```markdown
+## Git Diffs
+
+### Working Tree Diff
+
+```diff
+diff --git a/src/index.ts b/src/index.ts
+index 1234567..abcdefg 100644
+--- a/src/index.ts
++++ b/src/index.ts
+@@ -1,3 +1,4 @@
++import { newFunction } from './utils';
+ export { pack } from './core/packager';
+```
+
+### Staged Diff
+
+```diff
+<!-- Staged changes appear here -->
+```
+```
+
+### Use Cases
+
+- **Share work in progress**: Include uncommitted changes when sharing with AI assistants
+- **Code review**: Show what's about to be committed
+- **Bug analysis**: Include changes that may have introduced an issue
+- **Feature documentation**: Capture the current state of development
+
+### Security Note
+
+Diffs are subject to security scanning. Repomix will warn you if potentially sensitive information (API keys, passwords, etc.) is detected in your diffs.
+
+## Git Logs
+
+Include Git commit history with commit messages and changed files. This provides context about recent development activity.
+
+### What's Included
+
+For each commit, Repomix includes:
+- Commit date
+- Commit message
+- List of files changed in that commit
+
+### Using CLI
+
+Include commit logs:
+
+```bash
+repomix --include-logs
+```
+
+Customize the number of commits:
+
+```bash
+# Include last 20 commits (default: 50)
+repomix --include-logs --include-logs-count 20
+
+# Include last 100 commits
+repomix --include-logs --include-logs-count 100
+```
+
+### Using Configuration File
+
+In `repomix.config.json`:
+
+```json
+{
+  "output": {
+    "git": {
+      "includeLogs": true,
+      "includeLogsCount": 50
+    }
+  }
+}
+```
+
+Include more commit history:
+
+```json
+{
+  "output": {
+    "git": {
+      "includeLogs": true,
+      "includeLogsCount": 200
+    }
+  }
+}
+```
+
+### Programmatic API
+
+```typescript
+import { pack, defaultConfig, type GitLogResult } from 'repomix';
+
+const config = {
+  ...defaultConfig,
+  cwd: process.cwd(),
+  output: {
+    ...defaultConfig.output,
+    git: {
+      includeLogs: true,
+      includeLogsCount: 50
+    }
+  }
+};
+
+const result = await pack([process.cwd()], config);
+
+// Check log token count
+console.log(`Git log tokens: ${result.gitLogTokenCount}`);
+```
+
+### Output Format
+
+#### XML Format
+
+```xml
+<git_logs>
+  <git_log_commit>
+    <date>2024-03-15T10:30:00Z</date>
+    <message>feat(core): Add support for custom instructions</message>
+    <files>
+      <file>src/core/packager.ts</file>
+      <file>src/config/configSchema.ts</file>
+      <file>README.md</file>
+    </files>
+  </git_log_commit>
+  <git_log_commit>
+    <date>2024-03-14T15:20:00Z</date>
+    <message>fix(security): Improve sensitive data detection</message>
+    <files>
+      <file>src/core/security/securityCheck.ts</file>
+      <file>tests/security.test.ts</file>
+    </files>
+  </git_log_commit>
+  <!-- More commits... -->
+</git_logs>
+```
+
+#### Markdown Format
+
+```markdown
+## Git Logs
+
+### Commit: 2024-03-15T10:30:00Z
+**Message:** feat(core): Add support for custom instructions
+
+**Files Changed:**
+- src/core/packager.ts
+- src/config/configSchema.ts
+- README.md
+
+### Commit: 2024-03-14T15:20:00Z
+**Message:** fix(security): Improve sensitive data detection
+
+**Files Changed:**
+- src/core/security/securityCheck.ts
+- tests/security.test.ts
+```
+
+### Use Cases
+
+- **Development context**: Show AI assistants what features were recently added
+- **Bug investigation**: Track when files were last changed
+- **Code archaeology**: Understand the evolution of the codebase
+- **Team collaboration**: Share development history with new team members
+
+### Parsed Commit Data
+
+When using the programmatic API, you can access parsed commit data:
+
+```typescript
+import { getGitLogs, type GitLogCommit } from 'repomix';
+
+const gitLogResult = await getGitLogs([process.cwd()], config);
+
+if (gitLogResult) {
+  for (const commit of gitLogResult.commits) {
+    console.log(`Date: ${commit.date}`);
+    console.log(`Message: ${commit.message}`);
+    console.log(`Files: ${commit.files.join(', ')}`);
+    console.log('---');
+  }
+}
+```
+
+## Combining Git Features
+
+You can use multiple Git features together for comprehensive context:
+
+### CLI
+
+```bash
+repomix \
+  --include-diffs \
+  --include-logs \
+  --include-logs-count 30 \
+  --git-sort-by-changes-max-commits 50 \
+  --style markdown \
+  --output repo-with-history.md
+```
+
+### Configuration File
+
+```json
+{
+  "output": {
+    "style": "markdown",
+    "filePath": "repo-with-history.md",
+    "git": {
+      "sortByChanges": true,
+      "sortByChangesMaxCommits": 50,
+      "includeDiffs": true,
+      "includeLogs": true,
+      "includeLogsCount": 30
+    }
+  }
+}
+```
+
+### Programmatic API
+
+```typescript
+import { pack, defaultConfig } from 'repomix';
+
+const config = {
+  ...defaultConfig,
+  cwd: process.cwd(),
+  output: {
+    ...defaultConfig.output,
+    style: 'markdown' as const,
+    filePath: 'repo-with-history.md',
+    git: {
+      sortByChanges: true,
+      sortByChangesMaxCommits: 50,
+      includeDiffs: true,
+      includeLogs: true,
+      includeLogsCount: 30
+    }
+  }
+};
+
+const result = await pack([process.cwd()], config);
+
+console.log(`Total tokens: ${result.totalTokens.toLocaleString()}`);
+console.log(`Diff tokens: ${result.gitDiffTokenCount.toLocaleString()}`);
+console.log(`Log tokens: ${result.gitLogTokenCount.toLocaleString()}`);
+```
+
+## Non-Git Repositories
+
+If you're working in a directory that's not a Git repository:
+
+- `sortByChanges` will be automatically disabled
+- `includeDiffs` will be skipped (no diffs to include)
+- `includeLogs` will be skipped (no commits to include)
+- Repomix will continue to work normally for all other features
+
+## Performance Considerations
+
+### Large Repositories
+
+For large repositories with extensive history:
+
+```json
+{
+  "output": {
+    "git": {
+      "sortByChangesMaxCommits": 50,
+      "includeLogsCount": 20
+    }
+  }
+}
+```
+
+Reducing these values improves performance:
+- Faster processing time
+- Lower memory usage
+- Smaller output files
+
+### Token Count Impact
+
+Git features add to the total token count:
+
+```typescript
+const result = await pack([process.cwd()], config);
+
+console.log(`File content: ${result.totalTokens - result.gitDiffTokenCount - result.gitLogTokenCount}`);
+console.log(`Git diffs: ${result.gitDiffTokenCount}`);
+console.log(`Git logs: ${result.gitLogTokenCount}`);
+console.log(`Total: ${result.totalTokens}`);
+```
+
+Monitor token usage to stay within AI model context limits.
+
+## Security Scanning
+
+All Git content (diffs and logs) is subject to security scanning:
+
+```typescript
+const result = await pack([process.cwd()], config);
+
+if (result.suspiciousGitDiffResults.length > 0) {
+  console.warn('⚠️  Sensitive data detected in git diffs');
+  // Handle suspicious diffs
+}
+
+if (result.suspiciousGitLogResults.length > 0) {
+  console.warn('⚠️  Sensitive data detected in git logs');
+  // Handle suspicious logs
+}
+```
+
+See [Security](/essentials/security) for more information on security scanning.
+
+## Best Practices
+
+### 1. Adjust commit counts based on repository size
+
+```bash
+# Small project (< 100 files)
+repomix --include-logs-count 100
+
+# Medium project (100-1000 files)
+repomix --include-logs-count 50
+
+# Large project (> 1000 files)
+repomix --include-logs-count 20
+```
+
+### 2. Use diffs for active development
+
+```bash
+# When working on a feature
+repomix --include-diffs --output feature-context.md
+```
+
+### 3. Combine with file patterns
+
+```bash
+# Only include backend changes
+repomix --include "src/api/**" --include-diffs --include-logs
+```
+
+### 4. Regular vs. snapshot packing
+
+```json
+// Regular development (lightweight)
+{
+  "output": {
+    "git": {
+      "sortByChanges": true,
+      "includeDiffs": false,
+      "includeLogs": false
+    }
+  }
+}
+
+// Full snapshot (comprehensive)
+{
+  "output": {
+    "git": {
+      "sortByChanges": true,
+      "includeDiffs": true,
+      "includeLogs": true,
+      "includeLogsCount": 100
+    }
+  }
+}
+```
+
+## Next Steps
+
+- Learn about [Custom Instructions](/advanced/custom-instructions) for adding project context
+- Explore [Programmatic API](/advanced/programmatic-api) for automation
+- Check [Configuration Reference](/configuration/options) for all available options
